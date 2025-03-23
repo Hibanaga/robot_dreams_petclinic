@@ -80,29 +80,29 @@ Vagrant.configure("2") do |config|
 end
 
 
-# Vagrant.configure("2") do |config|
-#   (1..3).each do |i|
-#     config.vm.define "VM-#{i}" do |virtual|
-#       virtual.vm.box = "bento/ubuntu-24.04"
-#       virtual.vm.box_version = "202502.21.0"
-#
-#       virtual.vm.provider "virtualbox" do |vb|
-#         vb.name = "Virtual Machine ##{i}"
-#       end
-#
-#       virtual.vm.network "public_network", bridge: "en0: Wi-Fi"
-#       virtual.vm.synced_folder ".", "/vagrant"
-#
-#       virtual.vm.provision "shell", inline: <<-SHELL
-#         echo "Initialized apt-update..."
-#         apt-get update -y
-#
-#         echo "Installing cowsay..."
-#         apt-get install -y cowsay
-#
-#         echo "Execute cowsay..."
-#         cowsay "Virtual Machine ##{i} with Public Network is ready!"
-#       SHELL
-#     end
-#   end
-# end
+Vagrant.configure("2") do |config|
+  (1..3).each do |i|
+    config.vm.define "VM-#{i}" do |virtual|
+      virtual.vm.box = "bento/ubuntu-24.04"
+      virtual.vm.box_version = "202502.21.0"
+
+      virtual.vm.provider "virtualbox" do |vb|
+        vb.name = "Virtual Machine ##{i}"
+      end
+
+      virtual.vm.network "public_network", bridge: "en0: Wi-Fi"
+      virtual.vm.synced_folder ".", "/vagrant"
+
+      virtual.vm.provision "shell", inline: <<-SHELL
+        echo "Initialized apt-update..."
+        apt-get update -y
+
+        echo "Installing cowsay..."
+        apt-get install -y cowsay
+
+        echo "Execute cowsay..."
+        cowsay "Virtual Machine ##{i} with Public Network is ready!"
+      SHELL
+    end
+  end
+end
