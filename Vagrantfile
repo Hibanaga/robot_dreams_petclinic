@@ -75,5 +75,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: <<-SHELL
     echo "Initialized apt-update..."
     apt-get update
+    echo "Initialize install apache2..."
+    apt-get install -y apache2
   SHELL
 end
