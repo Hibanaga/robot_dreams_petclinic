@@ -79,21 +79,44 @@ Vagrant.configure("2") do |config|
   end
 end
 
+VMs = {
+  "publicVM" => {
+    box: "bento/ubuntu-24.04",
+    box_version: "202502.21.0",
+    network_type: "public_network",
+    network_options: { bridge: "en0: Wi-Fi" },
+    synced_folder: ".",
+  },
+  "privateVM" => {
+    box: "bento/ubuntu-24.04",
+    box_version: "202502.21.0",
+    network_type: "private_network",
+    network_options: { ip: "192.168.33.10" },
+    synced_folder: ".",
+  },
+  "staticVM" => {
+    box: "bento/ubuntu-24.04",
+    box_version: "202502.21.0",
+    network_type: "forwarded_port",
+    network_options: { guest: 3000, host: 3000 },
+    synced_folder: "./data",
+  }
+}
 
 Vagrant.configure("2") do |config|
-  (1..3).each do |i|
-    config.vm.define "VM-#{i}" do |virtual|
-      virtual.vm.box = "bento/ubuntu-24.04"
-      virtual.vm.box_version = "202502.21.0"
+  VMs.each do |name, predefined_config|
+    config.vm.define name do |vbox|
+      vbox.vm.box = predefined_config[:box]
+      vbox.vm.box_version = predefined_config[:box_version]
 
-      virtual.vm.provider "virtualbox" do |vb|
-        vb.name = "Virtual Machine ##{i}"
+      vbox.vm.provider "virtualbox" do |vb|
+        vb.name = "Virtual Machine: #{name}"
       end
 
-      virtual.vm.network "public_network", bridge: "en0: Wi-Fi"
-      virtual.vm.synced_folder ".", "/vagrant"
+      vbox.vm.network predefined_config[:network_type], **predefined_config[:network_options]
+      vbox.vm.synced_folder predefined_config[:synced_folder], "/vagrant"
 
-      virtual.vm.provision "shell", inline: <<-SHELL
+      vbox.vm.provision "shell", inline: <<-SHELL
         echo "Initialized apt-update..."
         apt-get update -y
 
@@ -101,7 +124,7 @@ Vagrant.configure("2") do |config|
         apt-get install -y cowsay
 
         echo "Execute cowsay..."
-        cowsay "Virtual Machine ##{i} with Public Network is ready!"
+        cowsay "Virtual Machine #{name} is ready!"
       SHELL
     end
   end
