@@ -1,8 +1,10 @@
 up:
 	vagrant up
 reload:
-	vagrant reload
-reload-provision:
-	vagrant reload --provision
+	make destroy && vagrant up
 destroy:
 	vagrant destroy -f && rm -rf extra_disk.vdi
+ssh:
+	vagrant ssh
+status:
+	vagrant global-status
