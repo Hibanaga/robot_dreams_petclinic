@@ -12,6 +12,11 @@ Run manually
 ./log_time.sh
 ```
 
+Get list cron jobs 
+```
+cronlist -l
+```
+
 For latest task been created Makefile with combinated configuration of vagrant commans to avoid
 ```
 The following error was experienced:
