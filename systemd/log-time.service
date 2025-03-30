@@ -1,0 +1,6 @@
+[Unit]
+Description=Log current time to /mnt/data/output.txt
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/log-time.sh

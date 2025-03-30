@@ -14,7 +14,7 @@ Run manually
 
 Get list cron jobs 
 ```
-cronlist -l
+crontab -l
 ```
 
 For latest task been created Makefile with combinated configuration of vagrant commans to avoid
