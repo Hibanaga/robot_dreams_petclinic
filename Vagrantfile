@@ -2,10 +2,10 @@ Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-24.04"
   config.vm.box_version = "202502.21.0"
 
-  config.vm.network "forwarded_port", guest: 80, host: 8080
+#   config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.network "private_network", ip: "192.168.1.10"
   config.vm.synced_folder ".", "/vagrant", disabled: false
 
-  # VirtualBox setup with an additional disk
   config.vm.provider "virtualbox" do |vb|
     vb.memory = 1024
 
@@ -39,21 +39,6 @@ Vagrant.configure("2") do |config|
     ]
   end
 
-  config.vm.provision "setup_disk", type: "shell", inline: <<-SHELL
-    apt-get update -y
-    apt-get install -y parted
-
-    parted /dev/sdb --script mklabel gpt
-    parted /dev/sdb --script mkpart primary ext4 0% 100%
-    mkfs.ext4 /dev/sdb1
-
-    mkdir -p /mnt/data
-    mount /dev/sdb1 /mnt/data
-    echo "/dev/sdb1 /mnt/data ext4 defaults 0 0" >> /etc/fstab
-
-    chown vagrant:vagrant /mnt/data
-  SHELL
-
   config.vm.provision "setup_nginx", type: "shell", inline: <<-SHELL
     echo "Running apt update..."
     apt-get -y update
@@ -75,6 +60,68 @@ Vagrant.configure("2") do |config|
     echo "Final Nginx version:"
     nginx -v
     echo "✅ Nginx installation and cleanup complete."
+  SHELL
+
+  config.vm.provision "configure_firewall", type: "shell", inline: <<-SHELL
+    echo "Installing and configuring UFW and Fail2Ban..."
+
+    apt-get update -y
+    apt-get install -y ufw fail2ban
+
+    echo "Configuring UFW rules..."
+
+    # Reset rules to avoid duplicates or conflicts
+    ufw --force reset
+
+    ufw allow in on eth0 to any port 22 proto tcp
+    ufw allow from 192.168.1.10 to any port 22 proto tcp
+    ufw deny from 192.168.1.11 to any port 22 proto tcp
+
+    ufw --force enable
+    ufw status numbered
+
+    cat <<EOF > /etc/fail2ban/jail.d/ssh.local
+[sshd]
+enabled = true
+maxretry = 3
+findtime = 1d
+bantime = 1w
+port = ssh
+logpath = %(sshd_log)s
+backend = %(sshd_backend)s
+EOF
+
+    systemctl restart fail2ban
+    systemctl enable fail2ban
+
+    echo "✅ Fail2Ban status:"
+    fail2ban-client status sshd
+
+    echo "Pinging Fail2Ban..."
+    fail2ban-client ping
+
+    echo "Manually banning test IPs..."
+    fail2ban-client set sshd banip 192.168.1.11
+    fail2ban-client set sshd banip 192.168.1.12
+    fail2ban-client set sshd banip 192.168.1.13
+
+    echo "✅ Final Fail2Ban status:"
+    fail2ban-client status sshd
+  SHELL
+
+  config.vm.provision "setup_disk", type: "shell", inline: <<-SHELL
+    apt-get update -y
+    apt-get install -y parted
+
+    parted /dev/sdb --script mklabel gpt
+    parted /dev/sdb --script mkpart primary ext4 0% 100%
+    mkfs.ext4 /dev/sdb1
+
+    mkdir -p /mnt/data
+    mount /dev/sdb1 /mnt/data
+    echo "/dev/sdb1 /mnt/data ext4 defaults 0 0" >> /etc/fstab
+
+    chown vagrant:vagrant /mnt/data
   SHELL
 
   config.vm.provision "time-logger", type: "shell", inline: <<-SHELL
