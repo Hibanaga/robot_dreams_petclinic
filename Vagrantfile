@@ -2,8 +2,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-24.04"
   config.vm.box_version = "202502.21.0"
 
-#   config.vm.network "forwarded_port", guest: 80, host: 8080
-  config.vm.network "private_network", ip: "192.168.1.10"
+  config.vm.network "forwarded_port", guest: 22, host: 2222
   config.vm.synced_folder ".", "/vagrant", disabled: false
 
   config.vm.provider "virtualbox" do |vb|
@@ -68,11 +67,6 @@ Vagrant.configure("2") do |config|
     apt-get update -y
     apt-get install -y ufw fail2ban
 
-    echo "Configuring UFW rules..."
-
-    # Reset rules to avoid duplicates or conflicts
-    ufw --force reset
-
     ufw allow in on eth0 to any port 22 proto tcp
     ufw allow from 192.168.1.10 to any port 22 proto tcp
     ufw deny from 192.168.1.11 to any port 22 proto tcp
@@ -131,7 +125,6 @@ EOF
     chmod +x /usr/local/bin/log-time.sh
 
     touch /mnt/data/output.txt
-    chown vagrant:vagrant /mnt/data/output.txt
 
     cp /vagrant/systemd/log-time.service /etc/systemd/system/log-time.service
     cp /vagrant/systemd/log-time.timer /etc/systemd/system/log-time.timer
