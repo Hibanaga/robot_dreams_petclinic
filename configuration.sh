@@ -1,12 +1,3 @@
-# HM 6 -> Bash scripting
-
-## Vagrantfile
-```
-config.vm.provision "shell", path: "configuration.sh", run: "always"
-```
-
-## Bash
-```
 #!/bin/bash
 
 set -e
@@ -31,4 +22,3 @@ do
 done
 
 yell "🎉 Configuration setup ended successfully"
-```
