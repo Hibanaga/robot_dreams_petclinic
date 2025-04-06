@@ -8,17 +8,25 @@ function yell {
   echo "🔊 $(date +"%T") $1"
 }
 
-for package in 'nginx' 'curl' 'apache2' 'ufw' 'postgresql';
+function setupPackage {
+    if (dpkg -l $1); then
+      yell "✅  Initialize update $1 package";
+      apt-get -y --only-upgrade install $1
+      yell "✅  $1 successfully updated";
+    else
+      yell "🚀 Initialize install $1 package"
+      apt-get -y install $1
+      yell "🚀 $1 installed successfully"
+    fi
+}
+
+for package in 'abc' 'nginx' 'curl' 'apache2' 'ufw' 'postgresql';
 do
-  if (dpkg -l $package); then
-    yell "✅ Initialize update $package package";
-    apt-get -y --only-upgrade install $package
-    yell "✅ $package successfully updated";
+  if (apt-cache show $package &>/dev/null); then
+    setupPackage $package
   else
-    yell "🚀 Initialize install $package package"
-    apt-get -y install $package
-    yell "🚀 $package installed successfully"
-  fi
+    yell "❌ Package $package doesn't exists. Skipping..."
+  fi;
 done
 
 yell "🎉 Configuration setup ended successfully"
