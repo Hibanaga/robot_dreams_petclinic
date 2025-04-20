@@ -356,3 +356,115 @@ child_id	first_name	last_name	birth_date	year_of_entry	age	class_id	institution_
 Імпортуванням теж було виконано за допомогою графічного інтерфейсу. 
 ```
 ![adminer_import.png](adminer_import.png)
+
+## Source (Origin):
+```postgresql
+-- Adminer 5.2.1 PostgreSQL 17.4 dump
+
+\connect "SchoolDB";
+
+INSERT INTO "children" ("child_id", "first_name", "last_name", "birth_date", "year_of_entry", "age", "class_id", "institution_id") VALUES
+(1,	'Alice',	'Johnson',	'2010-05-14',	'2021-09-01',	14,	1,	1),
+(2,	'Liam',	'Smith',	'2009-08-22',	'2020-09-01',	15,	2,	1),
+(3,	'Emma',	'Brown',	'2011-02-11',	'2022-09-01',	13,	3,	2),
+(4,	'Noah',	'Davis',	'2008-11-30',	'2019-09-01',	16,	4,	2),
+(5,	'Olivia',	'Wilson',	'2012-07-07',	'2023-09-01',	12,	5,	2),
+(6,	'William',	'Anderson',	'2009-01-20',	'2020-09-01',	15,	6,	3),
+(7,	'Sophia',	'Thomas',	'2010-09-18',	'2021-09-01',	14,	7,	3),
+(8,	'James',	'Moore',	'2011-12-12',	'2022-09-01',	13,	8,	3),
+(9,	'Mia',	'Taylor',	'2012-03-23',	'2023-09-01',	12,	9,	4),
+(10,	'Benjamin',	'Lee',	'2010-10-10',	'2021-09-01',	14,	10,	4),
+(11,	'Charlotte',	'Martinez',	'2011-04-16',	'2022-09-01',	13,	11,	5),
+(12,	'Daniel',	'White',	'2010-06-30',	'2021-09-01',	14,	12,	5),
+(13,	'Ella',	'Walker',	'2011-08-08',	'2022-09-01',	13,	13,	5);
+
+INSERT INTO "classes" ("class_id", "class_name", "institution_id", "institution_direction") VALUES
+(1,	'Linear Algebra and Applications',	1,	'Mathematics'),
+(2,	'Molecular Biology Techniques',	1,	'Biology and Chemistry'),
+(3,	'Advanced Calculus',	2,	'Mathematics'),
+(4,	'Organic Chemistry Lab',	2,	'Biology and Chemistry'),
+(5,	'French Language and Literature',	2,	'Language Studies'),
+(6,	'Statistics and Probability',	3,	'Mathematics'),
+(7,	'Genetics and Evolution',	3,	'Biology and Chemistry'),
+(8,	'German for Beginners',	3,	'Language Studies'),
+(9,	'Everyday Math for Adults',	4,	'Mathematics'),
+(10,	'Basic Spanish Conversation',	4,	'Language Studies'),
+(11,	'High School Chemistry',	5,	'Biology and Chemistry'),
+(12,	'English Composition',	5,	'Language Studies'),
+(13,	'Geometry Fundamentals',	5,	'Mathematics');
+
+INSERT INTO "institutions" ("institution_id", "institution_name", "institution_type", "address") VALUES
+(1,	'Massachusetts Institute of Technology',	'School',	'77 Massachusetts Ave, Cambridge, MA 02139, United States'),
+(2,	'Harvard University',	'Kindergarten',	'Cambridge, MA 02138, United States'),
+(3,	'Stanford University',	'School',	'450 Serra Mall, Stanford, CA 94305, United States'),
+(4,	'New York Public Library',	'School',	'476 5th Ave, New York, NY 10018, United States'),
+(5,	'Boston Public High School',	'Kindergarten',	'1010 Commonwealth Avenue, Boston, MA 02215, United States');
+
+INSERT INTO "parent" ("parent_id", "first_name", "last_name", "child_id", "tuition_fee") VALUES
+(1,	'Michael',	'Johnson',	1,	5000),
+(2,	'Sarah',	'Smith',	2,	5200),
+(3,	'David',	'Brown',	3,	4900),
+(4,	'Emily',	'Davis',	4,	5300),
+(5,	'John',	'Wilson',	5,	5100),
+(6,	'Laura',	'Anderson',	6,	5050),
+(7,	'Mark',	'Thomas',	7,	4950),
+(8,	'Rachel',	'Moore',	8,	4700),
+(9,	'Brian',	'Taylor',	9,	4600),
+(10,	'Anna',	'Lee',	10,	4800);
+```
+
+## Source (Restored Back-up):
+```postgresql
+-- Adminer 5.2.1 PostgreSQL 17.4 dump
+
+\connect "SchoolDBCopy";
+
+INSERT INTO "children" ("child_id", "first_name", "last_name", "birth_date", "year_of_entry", "age", "class_id", "institution_id") VALUES
+(1,	'Alice',	'Johnson',	'2010-05-14',	'2021-09-01',	14,	1,	1),
+(2,	'Liam',	'Smith',	'2009-08-22',	'2020-09-01',	15,	2,	1),
+(3,	'Emma',	'Brown',	'2011-02-11',	'2022-09-01',	13,	3,	2),
+(4,	'Noah',	'Davis',	'2008-11-30',	'2019-09-01',	16,	4,	2),
+(5,	'Olivia',	'Wilson',	'2012-07-07',	'2023-09-01',	12,	5,	2),
+(6,	'William',	'Anderson',	'2009-01-20',	'2020-09-01',	15,	6,	3),
+(7,	'Sophia',	'Thomas',	'2010-09-18',	'2021-09-01',	14,	7,	3),
+(8,	'James',	'Moore',	'2011-12-12',	'2022-09-01',	13,	8,	3),
+(9,	'Mia',	'Taylor',	'2012-03-23',	'2023-09-01',	12,	9,	4),
+(10,	'Benjamin',	'Lee',	'2010-10-10',	'2021-09-01',	14,	10,	4),
+(11,	'Charlotte',	'Martinez',	'2011-04-16',	'2022-09-01',	13,	11,	5),
+(12,	'Daniel',	'White',	'2010-06-30',	'2021-09-01',	14,	12,	5),
+(13,	'Ella',	'Walker',	'2011-08-08',	'2022-09-01',	13,	13,	5);
+
+INSERT INTO "classes" ("class_id", "class_name", "institution_id", "institution_direction") VALUES
+(1,	'Linear Algebra and Applications',	1,	'Mathematics'),
+(2,	'Molecular Biology Techniques',	1,	'Biology and Chemistry'),
+(3,	'Advanced Calculus',	2,	'Mathematics'),
+(4,	'Organic Chemistry Lab',	2,	'Biology and Chemistry'),
+(5,	'French Language and Literature',	2,	'Language Studies'),
+(6,	'Statistics and Probability',	3,	'Mathematics'),
+(7,	'Genetics and Evolution',	3,	'Biology and Chemistry'),
+(8,	'German for Beginners',	3,	'Language Studies'),
+(9,	'Everyday Math for Adults',	4,	'Mathematics'),
+(10,	'Basic Spanish Conversation',	4,	'Language Studies'),
+(11,	'High School Chemistry',	5,	'Biology and Chemistry'),
+(12,	'English Composition',	5,	'Language Studies'),
+(13,	'Geometry Fundamentals',	5,	'Mathematics');
+
+INSERT INTO "institutions" ("institution_id", "institution_name", "institution_type", "address") VALUES
+(1,	'Massachusetts Institute of Technology',	'School',	'77 Massachusetts Ave, Cambridge, MA 02139, United States'),
+(2,	'Harvard University',	'Kindergarten',	'Cambridge, MA 02138, United States'),
+(3,	'Stanford University',	'School',	'450 Serra Mall, Stanford, CA 94305, United States'),
+(4,	'New York Public Library',	'School',	'476 5th Ave, New York, NY 10018, United States'),
+(5,	'Boston Public High School',	'Kindergarten',	'1010 Commonwealth Avenue, Boston, MA 02215, United States');
+
+INSERT INTO "parent" ("parent_id", "first_name", "last_name", "child_id", "tuition_fee") VALUES
+(1,	'Michael',	'Johnson',	1,	5000),
+(2,	'Sarah',	'Smith',	2,	5200),
+(3,	'David',	'Brown',	3,	4900),
+(4,	'Emily',	'Davis',	4,	5300),
+(5,	'John',	'Wilson',	5,	5100),
+(6,	'Laura',	'Anderson',	6,	5050),
+(7,	'Mark',	'Thomas',	7,	4950),
+(8,	'Rachel',	'Moore',	8,	4700),
+(9,	'Brian',	'Taylor',	9,	4600),
+(10,	'Anna',	'Lee',	10,	4800);
+```
