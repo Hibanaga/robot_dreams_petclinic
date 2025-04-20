@@ -1,21 +1,22 @@
+version: '3.9'
+
+name: "Lesson 13 - Sql(Postgres) Playground"
+
 services:
-  mysql:
-    image: mysql:9.1
-    ports:
-      - "3306:3306"
+  db:
+    image: postgres
+    hostname: postgres
+    container_name: 'postgres'
+    restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=
-      - MYSQL_ALLOW_EMPTY_PASSWORD=true
-      - MYSQL_USER=petclinic
-      - MYSQL_PASSWORD=petclinic
-      - MYSQL_DATABASE=petclinic
-    volumes:
-      - "./conf.d:/etc/mysql/conf.d:ro"
-  postgres:
-    image: postgres:17.0
+      POSTGRES_SERVER: postgres
+      POSTGRES_DB: SchoolDB
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+
+  adminer:
+    image: adminer
+    restart: always
+    container_name: 'adminer'
     ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_PASSWORD=petclinic
-      - POSTGRES_USER=petclinic
-      - POSTGRES_DB=petclinic
+      - "8080:8080"
