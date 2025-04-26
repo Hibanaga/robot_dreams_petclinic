@@ -1,0 +1,22 @@
+version: '3.9'
+
+name: "Lesson 13 - Sql(Postgres) Playground"
+
+services:
+  db:
+    image: postgres
+    hostname: postgres
+    container_name: 'postgres'
+    restart: always
+    environment:
+      POSTGRES_SERVER: postgres
+      POSTGRES_DB: SchoolDB
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+
+  adminer:
+    image: adminer
+    restart: always
+    container_name: 'adminer'
+    ports:
+      - "8080:8080"
