@@ -1,33 +1,23 @@
-```
-CREATE TYPE INSTITUTION_TYPE AS ENUM ('School', 'Kindergarten');
+# Домашнє завдання - SQL
 
-CREATE TABLE Institutions (
-institution_id SERIAL PRIMARY KEY,
-institution_name VARCHAR(100) NOT NULL,
-institution_type INSTITUTION_TYPE NOT NULL,
-address VARCHAR(255) NOT NULL
-);
-
-```
-
-```
-DROP TABLE IF EXISTS Institutions;
-
-DROP TYPE IF EXISTS INSTITUTION_TYPE;
-```
-
-## Postgres:
 ```textmate
-    1. Таблиця Institutions:
-      * Створіть таблицю Institutions, яка зберігатиме інформацію про школи та дитячі садочки
-    
-        Поля таблиці:
-    
-        * institution_id — первинний ключ, автоінкремент
-        * institution_name — назва закладу
-        * institution_type — тип закладу (вибір між 'School' та 'Kindergarten')
-        * address — адреса закладу
+Завдання було виконано на Postgres, гадаю це не є великою проблемою, 
+бо ніколи не працював конкретно з Postgres. Тому що синтаксис не так сильно відрізняється.
 ```
+
+1. Створення бази даних:
+
+![create database.png](create%20database.png)
+
+2. Таблиця Institutions:
+  * Створіть таблицю Institutions, яка зберігатиме інформацію про школи та дитячі садочки
+
+    Поля таблиці:
+
+    * institution_id — первинний ключ, автоінкремент
+    * institution_name — назва закладу
+    * institution_type — тип закладу (вибір між 'School' та 'Kindergarten')
+    * address — адреса закладу
 
 ```postgresql
     CREATE TYPE INSTITUTION_TYPE AS ENUM ('School', 'Kindergarten');
@@ -40,17 +30,15 @@ DROP TYPE IF EXISTS INSTITUTION_TYPE;
     );
 ```
 
-```textmate
-2. Таблиця Classes:
-  * Створіть таблицю Classes, яка зберігатиме інформацію про навчальні класи та напрями
+3. Таблиця Classes:
+* Створіть таблицю Classes, яка зберігатиме інформацію про навчальні класи та напрями
 
-    Поля таблиці:
+  Поля таблиці:
 
     * class_id — первинний ключ, автоінкремент
     * class_name — назва класу
-    * institution_id — зовнішній ключ на таблицю 
+    * institution_id — зовнішній ключ на таблицю
     * Institutions direction — напрям навчання, вибір між: "Mathematics", "Biology and Chemistry", "Language Studies"
-```
 
 ```postgresql
     CREATE TYPE INSTITUTION_DIRECTION AS ENUM('Mathematics', 'Biology and Chemistry', 'Language Studies');
@@ -67,21 +55,19 @@ DROP TYPE IF EXISTS INSTITUTION_TYPE;
     DROP TABLE Classes;
 ```
 
-```textmate
-    1. Таблиця Children:
-      * Створіть таблицю Children, яка зберігатиме інформацію про дітей
-    
-        Поля таблиці:
-    
-        * child_id — первинний ключ, автоінкремент
-        * first_name — ім’я дитини
-        * last_name — прізвище дитини
-        * birth_date — дата народження
-        * year_of_entry — рік вступу
-        * age — вік дитини (тип INT)
-        * institution_id — зовнішній ключ на таблицю Institutions
-        * class_id — зовнішній ключ на таблицю Classes
-```
+4. Таблиця Children:
+  * Створіть таблицю Children, яка зберігатиме інформацію про дітей
+
+    Поля таблиці:
+
+    * child_id — первинний ключ, автоінкремент
+    * first_name — ім’я дитини
+    * last_name — прізвище дитини
+    * birth_date — дата народження
+    * year_of_entry — рік вступу
+    * age — вік дитини (тип INT)
+    * institution_id — зовнішній ключ на таблицю Institutions
+    * class_id — зовнішній ключ на таблицю Classes
 
 ```postgresql
     CREATE TABLE Children (
@@ -96,19 +82,16 @@ DROP TYPE IF EXISTS INSTITUTION_TYPE;
     )
 ```
 
-```textmate
- * 
-1. Таблиця Parents:
-  * Створіть таблицю Parents, яка зберігатиме інформацію про батьків
+5. Таблиця Parents:
+* Створіть таблицю Parents, яка зберігатиме інформацію про батьків
 
-    Поля таблиці:
+  Поля таблиці:
 
     * parent_id — первинний ключ, автоінкремент
     * first_name — ім’я батька/матері
     * last_name — прізвище батька/матері
     * child_id — зовнішній ключ на таблицю Children
     * tuition_fee — вартість навчання
-```
 
 ```postgresql
     CREATE TABLE Parent (
@@ -120,7 +103,8 @@ DROP TYPE IF EXISTS INSTITUTION_TYPE;
     );
 ```
 
-## 1. Операції з даними (Filled based on GhatGPT prompt):
+1. Операції з даними (Дані було згенеровано за допомогою ChatGPT):
+* Вставте принаймні 3 записи в кожну таблицю з реалістичними даними (імітація реальних закладів, класів, дітей, батьків та навчальних напрямів).
 
 ### Institutions
 ```postgresql
@@ -467,4 +451,102 @@ INSERT INTO "parent" ("parent_id", "first_name", "last_name", "child_id", "tuiti
 (8,	'Rachel',	'Moore',	8,	4700),
 (9,	'Brian',	'Taylor',	9,	4600),
 (10,	'Anna',	'Lee',	10,	4800);
+```
+
+
+## Додаткове завдання (Анонімізація):
+
+1. 1. Анонімізація таблиці Children:
+* Виконайте анонімізацію даних дітей у таблиці Children, замінивши їхні імена та прізвища випадковими або узагальненими значеннями.
+    * Наприклад, замініть всі імена на "Child", а прізвища — на "Anonymous".
+
+```postgresql
+UPDATE children  
+SET first_name = 'Child', last_name = 'Anonymous';
+```
+
+```textmate
+child_id	first_name	last_name	birth_date	year_of_entry	age	class_id	institution_id
+1	Child	Anonymous	2010-05-14	2021-09-01	14	1	1
+2	Child	Anonymous	2009-08-22	2020-09-01	15	2	1
+3	Child	Anonymous	2011-02-11	2022-09-01	13	3	2
+4	Child	Anonymous	2008-11-30	2019-09-01	16	4	2
+5	Child	Anonymous	2012-07-07	2023-09-01	12	5	2
+6	Child	Anonymous	2009-01-20	2020-09-01	15	6	3
+7	Child	Anonymous	2010-09-18	2021-09-01	14	7	3
+8	Child	Anonymous	2011-12-12	2022-09-01	13	8	3
+9	Child	Anonymous	2012-03-23	2023-09-01	12	9	4
+10	Child	Anonymous	2010-10-10	2021-09-01	14	10	4
+11	Child	Anonymous	2011-04-16	2022-09-01	13	11	5
+12	Child	Anonymous	2010-06-30	2021-09-01	14	12	5
+13	Child	Anonymous	2011-08-08	2022-09-01	13	13	5
+```
+
+2. Анонімізація таблиці Parents:
+* Замініть імена та прізвища батьків на псевдоніми (наприклад, Parent1, Parent2 тощо), а електронну пошту або іншу контактну інформацію — на випадкові значення.
+
+```postgresql
+UPDATE parent
+SET first_name = 'Parent' || parent_id,
+    last_name = 'ParentSurname' || parent_id;
+```
+
+```textmate
+parent_id	first_name	last_name	child_id	tuition_fee
+1	Parent1	ParentSurname1	1	5000
+2	Parent2	ParentSurname2	2	5200
+3	Parent3	ParentSurname3	3	4900
+4	Parent4	ParentSurname4	4	5300
+5	Parent5	ParentSurname5	5	5100
+6	Parent6	ParentSurname6	6	5050
+7	Parent7	ParentSurname7	7	4950
+8	Parent8	ParentSurname8	8	4700
+9	Parent9	ParentSurname9	9	4600
+10	Parent10	ParentSurname10	10	4800
+```
+
+3. Анонімізація таблиці Institutions: ([usefult source](https://stackoverflow.com/questions/56007299/convert-a-bytea-into-a-binary-string))
+* Для забезпечення конфіденційності замініть реальні назви закладів на умовні, наприклад, "Institution1", "Institution2" тощо.
+
+```postgresql
+UPDATE institutions 
+SET institution_name = 'Institution' || institution_id,
+    address = substr(md5(random()::text), 0, 33);
+```
+
+```textmate
+institution_id	institution_name	institution_type	address
+1	Institution1	School	9f5975542ecc323be4c39c5ba34268eb
+2	Institution2	Kindergarten	d1d466df28a7acf4f908ce33da40110a
+3	Institution3	School	909e409bfb69e24ac3fee1ae9b00b410
+4	Institution4	School	6675c4453c92a9adfc4f62cde4713332
+5	Institution5	Kindergarten	96c9076662691c2b3713971887fb9e12
+```
+
+4. Анонімізація фінансових даних:
+* Для збереження конфіденційності змініть вартість навчання (tuition_fee) на усереднені або випадкові значення в межах розумного діапазону.
+
+```postgresql
+UPDATE parent SET tuition_fee = atan(tuition_fee);
+```
+
+```textmate
+parent_id	first_name	last_name	child_id	tuition_fee
+1	Michael	Johnson	1	1.5705963
+2	Sarah	Smith	2	1.570604
+3	David	Brown	3	1.5705923
+4	Emily	Davis	4	1.5706077
+5	John	Wilson	5	1.5706003
+6	Laura	Anderson	6	1.5705984
+7	Mark	Thomas	7	1.5705943
+8	Rachel	Moore	8	1.5705836
+9	Brian	Taylor	9	1.5705789
+10	Anna	Lee	10	1.570588
+```
+
+1. Запит на перевірку анонімізації:
+* Виконайте запит, щоб переглянути результати анонімізації.
+
+```textmate
+Всі операції зі зміненими данними було додатково додано в описі, одразу по виконанню команди по зміненню данних.
 ```
