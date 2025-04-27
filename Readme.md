@@ -1,6 +1,21 @@
 # Домашнє завдання - NoSQL
 
 ### Домашнє завдання було виконано за допомогою Studio 3T який дуже добре працює з mongoDB базами
+Ініціалізація:
+
+```textmate
+name: "Lesson 14 - NoSql"
+
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+      CONNECTION_URL: mongodb://root:root@localhost:27018
+```
 
 1.Створення бази даних та колекцій:
 * Назвіть базу даних як gymDatabase
