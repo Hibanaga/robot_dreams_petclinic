@@ -10,8 +10,6 @@ FROM alpine:latest
 ARG USER=nonroot
 ENV HOME=/home/$USER
 
-EXPOSE "8080"
-
 CMD [ "/bin/sh" ]
 
 RUN apk add --update sudo
@@ -30,6 +28,8 @@ COPY index.html /var/www/localhost/htdocs/index.html
 
 USER $USER
 WORKDIR $HOME
+
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;", "-e", "/tmp/error.log"]
 ```
