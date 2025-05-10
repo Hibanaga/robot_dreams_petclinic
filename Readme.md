@@ -176,3 +176,144 @@ id |  name  |      email       |         created_at
 Error response from daemon: driver failed programming external connectivity on endpoint multi-container-app-web-3 (dda560fa2da34dd5e584ec5608ccd19a37035f6a77e5272617142c7be4d785fe): Bind for 0.0.0.0:8080 failed: port is already allocated
 ```
 
+## docker-compose.yml
+```dockerfile
+name: 'multi-container-app'
+
+services:
+  reverse-proxy:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    networks:
+      - appnet
+
+  web:
+    build:
+      context: ./web-data
+      dockerfile: Dockerfile
+    expose:
+      - "80"
+    networks:
+      - appnet
+
+  postgres:
+    image: 'postgres:bookworm'
+    shm_size: 128mb
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=root
+    networks:
+      - appnet
+
+  redis:
+    image: 'redis:alpine'
+    ports:
+      - "6380:6379"
+    networks:
+      - appnet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  db-data:
+
+networks:
+  appnet:
+    driver: bridge
+```
+
+# Reverse-proxy
+## nginx/default.conf
+```textmate
+upstream web_instance {
+    server web:80;
+    server web:80;
+    server web:80;
+}
+
+server {
+    listen 80;
+
+    access_log /var/log/nginx/access.log;
+
+    location / {
+        proxy_pass http://web_instance;
+    }
+}
+```
+
+## nginx/Dockerfile
+```textmate
+FROM nginx
+
+COPY default.conf /etc/nginx/conf.d/default.conf
+```
+
+# Web
+## web-data/default.conf:
+```textmate
+server {
+    listen 80;
+
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        add_header X-Served-By $hostname;
+    }
+}
+```
+
+## web-data/Dockerfile
+```textmate
+FROM nginx
+
+COPY index.html /usr/share/nginx/html/index.html
+COPY default.conf /etc/nginx/conf.d/default.conf
+```
+
+## web-data/index.html
+```textmate
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Docker App</title>
+</head>
+<body style="width: 100%; height: 100vh; display: flex; align-items: center;">
+<div style="margin: 0 auto; text-align: center;">
+    <h1>Hello from Docker!</h1>
+    <h2>Немає нічого більш постійного, ніж тимчасове</h2>
+</div>
+</body>
+</html>
+```
+
+## Bash (verification):
+```textmate
+#!/bin/bash
+
+echo "Collection unique X-Served-By values..."
+
+for i in {1..100}; do
+  curl -s -D - http://localhost:8080 -o /dev/null | grep -i 'X-Served-By'
+done  | sort | uniq
+
+hibana@mac robot_dreams_petclinic % sh x-server-by-log.sh
+Collection unique X-Served-By values...
+X-Served-By: 8b13493d8ef0
+X-Served-By: aeed6545d5c0
+```
+
+```textmate
+Власне тут в певній мірі можна було зробити в декілька разів простіше без створення кількох 
+Dockerfile і додаткової конфігурації nginx для web-data, але я трошки хотів досягнути того чого певно в docker-compose 
+без docker-swarm досягнути неможливо, тобто щоб трафік розподілявся рівномірно між всіма інстансами під час пінгування.
+```

@@ -11,9 +11,9 @@ services:
       - appnet
 
   web:
-    image: nginx:latest
-    volumes:
-      - ./web-data:/usr/share/nginx/html:ro
+    build:
+      context: ./web-data
+      dockerfile: Dockerfile
     expose:
       - "80"
     networks:
@@ -43,7 +43,6 @@ services:
 
 volumes:
   db-data:
-  web-data:
 
 networks:
   appnet:
