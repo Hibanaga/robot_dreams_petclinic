@@ -28,14 +28,14 @@
 name: 'multi-container-app'
 
 services:
-  web:
+  nginx:
     image: 'nginx'
     ports:
       - "8080:80"
+    volumes:
+      - web-data:/usr/share/nginx/html:ro
     networks:
       - appnet
-    volumes:
-      - ./web:/usr/share/nginx/html:ro
 
   postgres:
     image: 'postgres:bookworm'
@@ -68,6 +68,12 @@ networks:
     driver: bridge
 ```
 
+### Update nginx index.html
+```textmate
+hibana@mac robot_dreams_petclinic % docker cp ./web-data/index.html multi-container-app-nginx-1:/usr/share/nginx/html/index.html
+Successfully copied 2.05kB to multi-container-app-nginx-1:/usr/share/nginx/html/index.html
+```
+
 📌  Завдання 3: Запуск багатоконтейнерного застосунку
 
 1. Запустіть застосунок за допомогою Docker Compose:
@@ -80,6 +86,20 @@ networks:
 ```textmate
 hibana@mac robot_dreams_petclinic % docker-compose up -d
 
+hibana@mac robot_dreams_petclinic % docker-compose up -d                                                                        
+[+] Running 6/6
+ ✔ Network multi-container-app_appnet        Created                                                                                                                       0.0s 
+ ✔ Volume "multi-container-app_web-data"     Created                                                                                                                       0.0s 
+ ✔ Volume "multi-container-app_db-data"      Created                                                                                                                       0.0s 
+ ✔ Container multi-container-app-postgres-1  Started                                                                                                                       0.2s 
+ ✔ Container multi-container-app-nginx-1     Started                                                                                                                       0.2s 
+ ✔ Container multi-container-app-redis-1     Started                                                                                                                       0.2s 
+
+hibana@mac robot_dreams_petclinic % docker-compose ps 
+NAME                             IMAGE               COMMAND                  SERVICE    CREATED              STATUS                        PORTS
+multi-container-app-nginx-1      nginx               "/docker-entrypoint.…"   nginx      About a minute ago   Up About a minute             0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+multi-container-app-postgres-1   postgres:bookworm   "docker-entrypoint.s…"   postgres   About a minute ago   Up About a minute             5432/tcp
+multi-container-app-redis-1      redis:alpine        "docker-entrypoint.s…"   redis      About a minute ago   Up About a minute (healthy)   0.0.0.0:6380->6379/tcp, [::]:6380->6379/tcp
 ```
 
 ![nginx.png](nginx.png)
@@ -91,15 +111,22 @@ hibana@mac robot_dreams_petclinic % docker-compose up -d
 * Використовуйте команди docker network ls та docker volume ls для перегляду створених мереж і томів
 
 ```textmate
+NETWORK ID     NAME                              DRIVER    SCOPE
+6c8184c3c423   bridge                            bridge    local
+6bd848cca67f   gazetkowo-api_gazetkowo-network   bridge    local
+a2534d2dbf21   host                              host      local
+ee01d744d39a   multi-container-app_appnet        bridge    local
+0b3079b7c109   none                              null      local
 
-```
-
-```textmate
-
-```
-
-```textmate
-В мене в докері трошки безлад тому знайшов через інспект потрібний volume, тому що без нього нічого не зрозуміло(
+hibana@mac robot_dreams_petclinic % docker volume ls
+DRIVER    VOLUME NAME
+local     9d0cf952ea734b4e686a54e02c36d97b2996bdce3ccf65aaf10ab273c060e060
+local     17fa6c47f6ad3b4a9d781f237488bd0ed06fd29ca06a3f8c2ff7864da5785754
+local     7428b2a42857de24a5b206963b7f74d7090888a3d246d1a69bde1e8e0163df4f
+local     7762787f1b1799a4198ce7261adb20c90616b526290bf60b6f4e8cd9d8d5bd38
+local     e8c83073fa04cd92b0d5fb29842d00904f9921fcd122878d732e8fb2b8be9ab9
+local     multi-container-app_db-data
+local     multi-container-app_web-data
 ```
 
 2. Перевірте підключення до бази даних:
@@ -107,24 +134,81 @@ hibana@mac robot_dreams_petclinic % docker-compose up -d
 
 ## Redis
 ```redis
-~/PhpstormProjects/robot_dreams_petclinic git:[Lesson_17] docker exec -it multi-container-app-redis-1 sh
-
+hibana@mac robot_dreams_petclinic % docker exec -it multi-container-app-redis-1 sh          
 /data # redis-cli
-127.0.0.1:6379> ping
-127.0.0.1:6379> info memory
 
+127.0.0.1:6379> keys *
+(empty array)
+
+127.0.0.1:6379> info memory
+# Memory
+used_memory:1091200
+used_memory_human:1.04M
+used_memory_rss:17920000
+used_memory_rss_human:17.09M
+used_memory_peak:1327840
+used_memory_peak_human:1.27M
+used_memory_peak_perc:82.18%
+used_memory_overhead:1060560
+used_memory_startup:993936
+used_memory_dataset:30640
+used_memory_dataset_perc:31.50%
+allocator_allocated:5118688
+allocator_active:13500416
+allocator_resident:16384000
+allocator_muzzy:0
+total_system_memory:12591759360
+total_system_memory_human:11.73G
+used_memory_lua:31744
+used_memory_vm_eval:31744
+used_memory_lua_human:31.00K
+used_memory_scripts_eval:0
+number_of_cached_scripts:0
+number_of_functions:0
+number_of_libraries:0
+used_memory_vm_functions:32768
+used_memory_vm_total:64512
+used_memory_vm_total_human:63.00K
+used_memory_functions:192
+used_memory_scripts:192
+used_memory_scripts_human:192B
+maxmemory:0
+maxmemory_human:0B
+maxmemory_policy:noeviction
+allocator_frag_ratio:2.71
+allocator_frag_bytes:5292064
+allocator_rss_ratio:1.21
+allocator_rss_bytes:2883584
+rss_overhead_ratio:1.09
+rss_overhead_bytes:1536000
+mem_fragmentation_ratio:16.43
+mem_fragmentation_bytes:16829000
+mem_not_counted_for_evict:0
+mem_replication_backlog:0
+mem_total_replication_buffers:0
+mem_replica_full_sync_buffer:0
+mem_clients_slaves:0
+mem_clients_normal:1920
+mem_cluster_links:0
+mem_aof_buffer:0
+mem_allocator:jemalloc-5.3.0
+mem_overhead_db_hashtable_rehashing:0
+active_defrag_running:0
+lazyfree_pending_objects:0
+lazyfreed_objects:0
+
+127.0.0.1:6379> ping
+PONG
 ```
 ## Postgres
 ```postgresql
-~/PhpstormProjects/robot_dreams_petclinic git:[Lesson_17] docker exec -it multi-container-app-postgres-1 sh
+hibana@mac robot_dreams_petclinic % docker exec -it multi-container-app-postgres-1 sh
 # psql -U postgres
 psql (17.5 (Debian 17.5-1.pgdg120+1))
 Type "help" for help.
 
-postgres=# SHOW DATABASES;
-ERROR:  unrecognized configuration parameter "databases"
 postgres=# \l
-                                                    List of databases
+List of databases
    Name    |  Owner   | Encoding | Locale Provider |  Collate   |   Ctype    | Locale | ICU Rules |   Access privileges   
 -----------+----------+----------+-----------------+------------+------------+--------+-----------+-----------------------
  postgres  | postgres | UTF8     | libc            | en_US.utf8 | en_US.utf8 |        |           | 
@@ -146,15 +230,12 @@ List of relations
 --------+-------+-------+----------
  public | users | table | postgres
 (1 row)
-
-postgres=# INSERT INTO users (name, email) VALUES ("Thomas", "thomas@gmail.com");
-ERROR:  column "Thomas" does not exist
 postgres=# INSERT INTO users (name, email) VALUES ('Thomas', 'thomas@gmail.com');
 INSERT 0 1
 postgres=# SELECT * FROM users;
-id |  name  |      email       |         created_at         
+ id |  name  |      email       |         created_at         
 ----+--------+------------------+----------------------------
-  1 | Thomas | thomas@gmail.com | 2025-05-10 06:41:27.774989
+  1 | Thomas | thomas@gmail.com | 2025-05-10 09:46:28.476662
 (1 row)
 ```
 
@@ -165,11 +246,63 @@ id |  name  |      email       |         created_at
 2. Перевірте стан масштабованих сервісів:
 * Використовуйте команду docker-compose ps для перегляду стану запущених контейнерів
 
-
 ```textmate
 Для виконання цього завдання були потрібні зміни в конфігурації,
 тому що при початковій ініціалізації було явно алоковано порт 
 і при створенні нових контейнерів на основі 'nginx', виникає помилка.
+
+Тому умовно розділив на дві різних конфігурації, але конкретно в контейнері залишив тільки нову конфігурацію.
+Тому що при виконанні попередніх пунктів ми не потребуємо чогось більшого ніж надана конфігурація.
+
+hibana@mac robot_dreams_petclinic % docker-compose up -d --scale web=3
+[+] Building 0.1s (15/15) FINISHED                                                                                                                              docker:orbstack
+ => [web internal] load build definition from Dockerfile                                                                                                                   0.0s
+ => => transferring dockerfile: 183B                                                                                                                                       0.0s
+ => [reverse-proxy internal] load build definition from Dockerfile                                                                                                         0.0s
+ => => transferring dockerfile: 134B                                                                                                                                       0.0s
+ => [reverse-proxy internal] load metadata for docker.io/library/nginx:latest                                                                                              0.0s
+ => [web internal] load .dockerignore                                                                                                                                      0.0s
+ => => transferring context: 2B                                                                                                                                            0.0s
+ => [reverse-proxy internal] load .dockerignore                                                                                                                            0.0s
+ => => transferring context: 2B                                                                                                                                            0.0s
+ => [reverse-proxy 1/3] FROM docker.io/library/nginx:latest                                                                                                                0.0s
+ => [web internal] load build context                                                                                                                                      0.0s
+ => => transferring context: 610B                                                                                                                                          0.0s
+ => [reverse-proxy internal] load build context                                                                                                                            0.0s
+ => => transferring context: 71B                                                                                                                                           0.0s
+ => CACHED [web 2/3] COPY index.html /usr/share/nginx/html/index.html                                                                                                      0.0s
+ => CACHED [web 3/3] COPY default.conf /etc/nginx/conf.d/default.conf                                                                                                      0.0s
+ => CACHED [reverse-proxy 2/2] COPY default.conf /etc/nginx/conf.d/default.conf                                                                                            0.0s
+ => [web] exporting to image                                                                                                                                               0.0s
+ => => exporting layers                                                                                                                                                    0.0s
+ => => writing image sha256:508640157ad414b541b2a0063b7c4a866c1d60f7f132914ff98da61a190cca91                                                                               0.0s
+ => => naming to docker.io/library/multi-container-app-web                                                                                                                 0.0s
+ => [reverse-proxy] exporting to image                                                                                                                                     0.0s
+ => => exporting layers                                                                                                                                                    0.0s
+ => => writing image sha256:9e2ad581db5a805619fad43fff9c7edbd4ad01f561c15c04844c162f70a3f718                                                                               0.0s
+ => => naming to docker.io/library/multi-container-app-reverse-proxy                                                                                                       0.0s
+ => [web] resolving provenance for metadata file                                                                                                                           0.0s
+ => [reverse-proxy] resolving provenance for metadata file                                                                                                                 0.0s
+[+] Running 10/10
+ ✔ reverse-proxy                                  Built                                                                                                                    0.0s 
+ ✔ web                                            Built                                                                                                                    0.0s 
+ ✔ Network multi-container-app_appnet             Created                                                                                                                  0.0s 
+ ✔ Volume "multi-container-app_db-data"           Created                                                                                                                  0.0s 
+ ✔ Container multi-container-app-reverse-proxy-1  Started                                                                                                                  0.2s 
+ ✔ Container multi-container-app-redis-1          Started                                                                                                                  0.2s 
+ ✔ Container multi-container-app-postgres-1       Started                                                                                                                  0.2s 
+ ✔ Container multi-container-app-web-1            Started                                                                                                                  0.2s 
+ ✔ Container multi-container-app-web-2            Started                                                                                                                  0.4s 
+ ✔ Container multi-container-app-web-3            Started                                                                                                                  0.3s 
+
+hibana@mac robot_dreams_petclinic % docker-compose ps
+NAME                                  IMAGE                               COMMAND                  SERVICE         CREATED          STATUS                    PORTS
+multi-container-app-postgres-1        postgres:bookworm                   "docker-entrypoint.s…"   postgres        20 seconds ago   Up 20 seconds             5432/tcp
+multi-container-app-redis-1           redis:alpine                        "docker-entrypoint.s…"   redis           20 seconds ago   Up 20 seconds (healthy)   0.0.0.0:6380->6379/tcp, [::]:6380->6379/tcp
+multi-container-app-reverse-proxy-1   multi-container-app-reverse-proxy   "/docker-entrypoint.…"   reverse-proxy   20 seconds ago   Up 20 seconds             0.0.0.0:8080->80/tcp, [::]:8080->80/tcp
+multi-container-app-web-1             multi-container-app-web             "/docker-entrypoint.…"   web             20 seconds ago   Up 20 seconds             80/tcp
+multi-container-app-web-2             multi-container-app-web             "/docker-entrypoint.…"   web             20 seconds ago   Up 19 seconds             80/tcp
+multi-container-app-web-3             multi-container-app-web             "/docker-entrypoint.…"   web             20 seconds ago   Up 19 seconds             80/tcp
 ```
 
 ```postgresql
