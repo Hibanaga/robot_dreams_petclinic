@@ -1,0 +1,49 @@
+name: 'multi-container-app'
+
+services:
+  reverse-proxy:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    networks:
+      - appnet
+
+  web:
+    build:
+      context: ./web-data
+      dockerfile: Dockerfile
+    expose:
+      - "80"
+    networks:
+      - appnet
+
+  postgres:
+    image: 'postgres:bookworm'
+    shm_size: 128mb
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=root
+    networks:
+      - appnet
+
+  redis:
+    image: 'redis:alpine'
+    ports:
+      - "6380:6379"
+    networks:
+      - appnet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  db-data:
+
+networks:
+  appnet:
+    driver: bridge
