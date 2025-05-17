@@ -33,3 +33,7 @@ falco-status:
 	kubectl get pods -n kube-system -l app=falco
 falco-logs:
 	kubectl logs -l app=falco -n kube-system --tail=100
+falco-describe:
+	kubectl describe daemonset falco -n kube-system
+falco-logs:
+	kubectl logs -n kube-system -l app=falco
