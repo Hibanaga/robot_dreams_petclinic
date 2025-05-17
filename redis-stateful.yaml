@@ -20,26 +20,18 @@ spec:
         fsGroup: 1004
       containers:
         - name: redis
-          image: redis:latest
+          image: redis:alpine
           ports:
             - containerPort: 6379
           volumeMounts:
             - name: redis-data
               mountPath: /mnt/redis/data
-            - name: redis-logs
-              mountPath: /mnt/redis/log
             - name: redis-backup
               mountPath: /mnt/redis/backup
       volumes:
         - name: redis-data
           persistentVolumeClaim:
             claimName: redis-data-pvc
-        - name: redisos
-          persistentVolumeClaim:
-            claimName: redis-os
-        - name: redis-logs
-          persistentVolumeClaim:
-            claimName: redis-log-pvc
         - name: redis-backup
           persistentVolumeClaim:
             claimName: redis-backup-pvc
@@ -47,7 +39,7 @@ spec:
     - metadata:
         name: redis-data
       spec:
-        accessModes: [ReadWriteOnce]
+        accessModes: ["ReadWriteOnce"]
         resources:
           requests:
             storage: 1Gi
