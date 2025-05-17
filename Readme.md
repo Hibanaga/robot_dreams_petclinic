@@ -2,9 +2,18 @@
 
 ## Pre-requires:
 ```textmate
-Тут трошки логів і контексту з чим спочатку трошки було не зрозуміло, 
-що і куди танцювати, але в цілому коли розібратись з контекстом виконання
-вже не так складно.
+Тут трохи логів і контексту — спочатку було не зовсім зрозуміло, 
+що і як налаштовувати, але загалом, коли розібратися з контекстом виконання, 
+усе вже не здається таким складним. 
+
+Також виконання першого і другого завдань 
+відбувалося в різних середовищах:
+
+1. За допомогою OrbStack
+2. За допомогою Minikube
+
+Тому що чомусь OrbStack працює дуже погано і він має обмежений функціонал,
+або ж я просто погано налаштував, що теж можливо(
 ```
 
 ```textmate
@@ -116,7 +125,7 @@ spec:
     app: redis
 ```
 
-```Makefil```
+```Makefilе```
 
 ```text
 Для спрощеного використання поміж 
@@ -293,10 +302,11 @@ kubectl exec -it redis-stateful-0 -- redis-cli
 
 📌 Завдання 2: Налаштування Falco в Kubernetes за допомогою DaemonSet 
 
-Корисний ресурс, в якому було описано 80% всього конфігу: [source](https://github.com/sysdiglabs/falco-nats/blob/master/falco-daemonset-configmap.yaml)
-
 Мета завдання
 Розгорнути інструмент Falco в кластері Kubernetes для моніторингу подій безпеки на кожному вузлі. Falco буде встановлено через DaemonSet, що забезпечить його запуск на кожному вузлі в кластері для контролю системних подій у реальному часі.
+
+
+Корисний ресурс, в якому було описано 80% всього конфігу: [source](https://github.com/sysdiglabs/falco-nats/blob/master/falco-daemonset-configmap.yaml)
 
 Кроки
 1. Налаштуйте DaemonSet для Falco:
@@ -320,10 +330,27 @@ kubectl exec -it redis-stateful-0 -- redis-cli
 6. Виконайте команду для перегляду логів одного з подів Falco: kubectl logs -l app=falco -n kube-system
 * Переконайтеся, що Falco генерує сповіщення про події — логи можуть містити інформацію про такі дії, як-от доступ до файлів, створення нових процесів або взаємодія з Docker
 
-```text
-falco-account.yaml
+```makefile
+falco-apply:
+	kubectl apply -f falco-account.yaml
+	kubectl apply -f falco-daemon.yaml
+falco-delete:
+	kubectl delete daemonset falco -n kube-system --ignore-not-found
+	kubectl delete serviceaccount falco-account -n kube-system --ignore-not-found
+	kubectl delete clusterrole  falco-cluster-role --ignore-not-found
+	kubectl delete clusterrolebinding falco-cluster-role-binding --ignore-not-found
+falco-recreate: falco-delete falco-apply
+falco-status:
+	kubectl get pods -n kube-system -l app=falco
+falco-logs:
+	kubectl logs -l app=falco -n kube-system --tail=100
+falco-describe:
+	kubectl describe daemonset falco -n kube-system
+falco-logs:
+	kubectl logs -n kube-system -l app=falco
 ```
 
+```falco-account.yaml```
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -357,9 +384,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ```
 
-```text
-falco-daemon.yaml
-```
+```falco-daemon.yaml```
 ```yaml
 apiVersion: apps/v1
 kind: DaemonSet
@@ -448,24 +473,99 @@ spec:
             path: /usr
 ```
 
-
-### Logs:
+## Creation Logs
 ```text
-hibana@mac robot_dreams_petclinic % make falco-logs
+kubectl get pods -n kube-system -l app=falco
+NAME          READY   STATUS    RESTARTS   AGE
+falco-mnwcm   1/1     Running   0          4m46s
+
+hibana@mac robot_dreams_petclinic % make falco-describe
 Makefile:39: warning: overriding commands for target `falco-logs'
 Makefile:35: warning: ignoring old commands for target `falco-logs'
-kubectl logs -n kube-system -l app=falco
-Defaulted container "falco" out of: falco, init-pipe (init)
-2025-05-17T10:33:18+0000: System info: Linux version 6.13.7-orbstack-00283-g9d1400e7e9c6 (orbstack@builder) (ClangBuiltLinux clang version 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed), ClangBuiltLinux LLD 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed)) #104 SMP Mon Mar 17 06:15:48 UTC 2025
-2025-05-17T10:33:18+0000: Loading rules from:
-2025-05-17T10:33:18+0000:    /etc/falco/falco_rules.yaml | schema validation: ok
-2025-05-17T10:33:19+0000:    /etc/falco/falco_rules.local.yaml | schema validation: none
-2025-05-17T10:33:19+0000: The chosen syscall buffer dimension is: 8388608 bytes (8 MBs)
-2025-05-17T10:33:19+0000: Starting health webserver with threadiness 12, listening on 0.0.0.0:8765
-2025-05-17T10:33:19+0000: Loaded event sources: syscall
-2025-05-17T10:33:19+0000: Enabled event sources: syscall
-2025-05-17T10:33:19+0000: Opening 'syscall' source with modern BPF probe.
-2025-05-17T10:33:19+0000: One ring buffer every '2' CPUs.
+kubectl describe daemonset falco -n kube-system
+Name:           falco
+Namespace:      kube-system
+Selector:       app=falco
+Node-Selector:  <none>
+Labels:         app=falco
+Annotations:    deprecated.daemonset.template.generation: 1
+Desired Number of Nodes Scheduled: 1
+Current Number of Nodes Scheduled: 1
+Number of Nodes Scheduled with Up-to-date Pods: 1
+Number of Nodes Scheduled with Available Pods: 1
+Number of Nodes Misscheduled: 0
+Pods Status:  1 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:           app=falco
+                    role=security
+  Service Account:  falco-account
+  Init Containers:
+   init-pipe:
+    Image:      busybox
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      mkfifo /var/run/falco/nats
+    Environment:  <none>
+    Mounts:
+      /var/run/falco/ from shared-pipe (rw)
+  Containers:
+   falco:
+    Image:      falcosecurity/falco:latest
+    Port:       <none>
+    Host Port:  <none>
+    Limits:
+      cpu:     100m
+      memory:  256Mi
+    Requests:
+      cpu:        100m
+      memory:     128Mi
+    Environment:  <none>
+    Mounts:
+      /host/boot from boot-fs (ro)
+      /host/dev from dev-fs (ro)
+      /host/lib/modules from lib-modules (ro)
+      /host/proc from proc-fs (ro)
+      /host/usr from user-fs (ro)
+      /host/var/run/docker.sock from docker-socket (ro)
+      /var/run/falco from shared-pipe (rw)
+  Volumes:
+   shared-pipe:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+   docker-socket:
+    Type:          HostPath (bare host directory volume)
+    Path:          /var/run/docker.sock
+    HostPathType:  
+   dev-fs:
+    Type:          HostPath (bare host directory volume)
+    Path:          /dev
+    HostPathType:  
+   proc-fs:
+    Type:          HostPath (bare host directory volume)
+    Path:          /proc
+    HostPathType:  
+   boot-fs:
+    Type:          HostPath (bare host directory volume)
+    Path:          /boot
+    HostPathType:  
+   lib-modules:
+    Type:          HostPath (bare host directory volume)
+    Path:          /lib/modules
+    HostPathType:  
+   user-fs:
+    Type:          HostPath (bare host directory volume)
+    Path:          /usr
+    HostPathType:  
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Events:
+  Type    Reason            Age    From                  Message
+  ----    ------            ----   ----                  -------
+  Normal  SuccessfulCreate  5m40s  daemonset-controller  Created pod: falco-mnwcm
 ```
 
 ## Trying make some actions
