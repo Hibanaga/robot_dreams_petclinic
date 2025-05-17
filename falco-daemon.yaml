@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: falco
+  namespace: kube-system
+  labels:
+    name: falco
+    app: falco
+spec:
+  selector:
+    matchLabels:
+      app: falco
+  template:
+    metadata:
+      labels:
+        name: falco
+        app: falco
+        role: security
+    spec:
+      serviceAccountName: falco-account
+      containers:
+        - name: falco-nats
+          image: sysdiglabs/falco-nats:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /var/run/falco/
+              name: shared-pipe
+        - name: falco
+          image: sysdig/falco:latest
+          resources:
+            limits:
+              cpu: 100m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            privileged: true
+          args:
+            - "/usr/bin/falco"
+            - "-K"
+            - "/var/run/secrets/kubernetes.io/serviceaccount/token"
+            - "-k"
+            - "https://kubernetes"
+            - "-pk"
+            - "-U"
+          volumeMounts:
+            - mountPath: /var/run/falco
+              name: shared-pipe
+              readOnly: false
+            - mountPath: /host/var/run/docker.sock
+              name: docker-socket
+              readOnly: true
+            - mountPath: /host/dev
+              name: dev-fs
+              readOnly: true
+            - mountPath: /host/proc
+              name: proc-fs
+              readOnly: true
+            - mountPath: /host/boot
+              name: boot-fs
+              readOnly: true
+            - mountPath: /host/lib/modules
+              name: lib-modules
+              readOnly: true
+            - mountPath: /host/usr
+              name: user-fs
+              readOnly: true
+            - mountPath: /etc/falco
+              name: falco-config
+      initContainers:
+        - name: init-pipe
+          image: busybox
+          command:
+            - "mkfifo"
+            - "var/run/falco/nats"
+          volumeMounts:
+            - mountPath: /var/run/falco/
+              name: shared-pipe
+              readOnly: false
+      volumes:
+        - name: shared-pipe
+          emptyDir: {}
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: dev-fs
+          hostPath:
+            path: /dev
+        - name: proc-fs
+          hostPath:
+            path: /proc
+        - name: boot-fs
+          hostPath:
+            path: /host/boot
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: user-fs
+          hostPath:
+            path: /usr
+        - name: falco-config
+          configMap:
+            name: falco-config
