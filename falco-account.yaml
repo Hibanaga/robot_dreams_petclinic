@@ -23,7 +23,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: falco-account
-    namespace: default
+    namespace: kube-system
 roleRef:
   kind: ClusterRole
   name: falco-cluster-role

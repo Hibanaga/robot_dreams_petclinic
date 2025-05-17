@@ -38,7 +38,9 @@
     *         orbstack   orbstack   orbstack   
 ```
 
-## Завдання 1: Створення StatefulSet для Redis-кластера ([helpful source](https://portal.nutanix.com/page/documents/solutions/details?targetId=TN-2194-Deploying-Redis-Nutanix-Data-Services-Kubernetes:creating-the-redis-application-with-a-statefulset.html))
+## Завдання 1: Створення StatefulSet для Redis-кластера 
+
+Корисний ресурс на основі якого було створено redis-stateful.yaml: ([source](https://portal.nutanix.com/page/documents/solutions/details?targetId=TN-2194-Deploying-Redis-Nutanix-Data-Services-Kubernetes:creating-the-redis-application-with-a-statefulset.html))
 Кроки:
 1. Створіть PersistentVolumeClaim (PVC) для зберігання даних Redis. Кожен под у StatefulSet використовуватиме свій окремий том для зберігання даних.
 2. Створіть StatefulSet для Redis із налаштуваннями для запуску двох реплік. Кожна репліка повинна мати стабільне ім’я та доступ до постійного тому.
@@ -289,14 +291,14 @@ kubectl exec -it redis-stateful-0 -- redis-cli
 127.0.0.1:6379> 
 ```
 
-📌 Завдання 2: Налаштування Falco в Kubernetes за допомогою DaemonSet [source](https://github.com/sysdiglabs/falco-nats/blob/master/falco-daemonset-configmap.yaml)
+📌 Завдання 2: Налаштування Falco в Kubernetes за допомогою DaemonSet 
+
+Корисний ресурс, в якому було описано 80% всього конфігу: [source](https://github.com/sysdiglabs/falco-nats/blob/master/falco-daemonset-configmap.yaml)
 
 Мета завдання
-
 Розгорнути інструмент Falco в кластері Kubernetes для моніторингу подій безпеки на кожному вузлі. Falco буде встановлено через DaemonSet, що забезпечить його запуск на кожному вузлі в кластері для контролю системних подій у реальному часі.
 
 Кроки
-
 1. Налаштуйте DaemonSet для Falco:
 * Розробіть конфігурацію DaemonSet, яка розгорне Falco на кожному вузлі. Falco повинен працювати з привілейованим доступом для моніторингу системних викликів.
 2. Налаштуйте монтування системних директорій: для того, щоб Falco міг правильно збирати системні події, потрібно змонтувати такі директорії:
@@ -318,3 +320,218 @@ kubectl exec -it redis-stateful-0 -- redis-cli
 6. Виконайте команду для перегляду логів одного з подів Falco: kubectl logs -l app=falco -n kube-system
 * Переконайтеся, що Falco генерує сповіщення про події — логи можуть містити інформацію про такі дії, як-от доступ до файлів, створення нових процесів або взаємодія з Docker
 
+```text
+falco-account.yaml
+```
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: falco-account
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: falco-cluster-role
+rules:
+  - apiGroups: ["extensions",""]
+    resources: ["nodes","namespaces","pods","replicationcontrollers","services","events","configmaps"]
+    verbs: ["get","list","watch"]
+  - nonResourceURLs: ["/healthz", "/healthz/*"]
+    verbs: ["get"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: falco-cluster-role-binding
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: falco-account
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: falco-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+```
+
+```text
+falco-daemon.yaml
+```
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: falco
+  namespace: kube-system
+  labels:
+    app: falco
+spec:
+  selector:
+    matchLabels:
+      app: falco
+  template:
+    metadata:
+      labels:
+        app: falco
+        role: security
+    spec:
+      serviceAccountName: falco-account
+      containers:
+        - name: falco
+          image: falcosecurity/falco:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 100m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: shared-pipe
+              mountPath: /var/run/falco
+              readOnly: false
+            - name: docker-socket
+              mountPath: /host/var/run/docker.sock
+              readOnly: true
+            - name: dev-fs
+              mountPath: /host/dev
+              readOnly: true
+            - name: proc-fs
+              mountPath: /host/proc
+              readOnly: true
+            - name: boot-fs
+              mountPath: /host/boot
+              readOnly: true
+            - name: lib-modules
+              mountPath: /host/lib/modules
+              readOnly: true
+            - name: user-fs
+              mountPath: /host/usr
+              readOnly: true
+      initContainers:
+        - name: init-pipe
+          image: busybox
+          command:
+            - sh
+            - -c
+            - "mkfifo /var/run/falco/nats"
+          volumeMounts:
+            - name: shared-pipe
+              mountPath: /var/run/falco/
+              readOnly: false
+      volumes:
+        - name: shared-pipe
+          emptyDir: {}
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: dev-fs
+          hostPath:
+            path: /dev
+        - name: proc-fs
+          hostPath:
+            path: /proc
+        - name: boot-fs
+          hostPath:
+            path: /boot
+        - name: lib-modules
+          hostPath:
+            path: /lib/modules
+        - name: user-fs
+          hostPath:
+            path: /usr
+```
+
+
+### Logs:
+```text
+hibana@mac robot_dreams_petclinic % make falco-logs
+Makefile:39: warning: overriding commands for target `falco-logs'
+Makefile:35: warning: ignoring old commands for target `falco-logs'
+kubectl logs -n kube-system -l app=falco
+Defaulted container "falco" out of: falco, init-pipe (init)
+2025-05-17T10:33:18+0000: System info: Linux version 6.13.7-orbstack-00283-g9d1400e7e9c6 (orbstack@builder) (ClangBuiltLinux clang version 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed), ClangBuiltLinux LLD 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed)) #104 SMP Mon Mar 17 06:15:48 UTC 2025
+2025-05-17T10:33:18+0000: Loading rules from:
+2025-05-17T10:33:18+0000:    /etc/falco/falco_rules.yaml | schema validation: ok
+2025-05-17T10:33:19+0000:    /etc/falco/falco_rules.local.yaml | schema validation: none
+2025-05-17T10:33:19+0000: The chosen syscall buffer dimension is: 8388608 bytes (8 MBs)
+2025-05-17T10:33:19+0000: Starting health webserver with threadiness 12, listening on 0.0.0.0:8765
+2025-05-17T10:33:19+0000: Loaded event sources: syscall
+2025-05-17T10:33:19+0000: Enabled event sources: syscall
+2025-05-17T10:33:19+0000: Opening 'syscall' source with modern BPF probe.
+2025-05-17T10:33:19+0000: One ring buffer every '2' CPUs.
+```
+
+## Trying make some actions
+```text
+hibana@mac robot_dreams_petclinic % make falco-logs                                              
+Makefile:39: warning: overriding commands for target `falco-logs'
+Makefile:35: warning: ignoring old commands for target `falco-logs'
+kubectl logs -n kube-system -l app=falco
+Defaulted container "falco" out of: falco, init-pipe (init)
+2025-05-17T10:44:28+0000: System info: Linux version 6.13.7-orbstack-00283-g9d1400e7e9c6 (orbstack@builder) (ClangBuiltLinux clang version 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed), ClangBuiltLinux LLD 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed)) #104 SMP Mon Mar 17 06:15:48 UTC 2025
+2025-05-17T10:44:28+0000: Loading rules from:
+2025-05-17T10:44:29+0000:    /etc/falco/falco_rules.yaml | schema validation: ok
+2025-05-17T10:44:29+0000:    /etc/falco/falco_rules.local.yaml | schema validation: none
+2025-05-17T10:44:29+0000: The chosen syscall buffer dimension is: 8388608 bytes (8 MBs)
+2025-05-17T10:44:29+0000: Starting health webserver with threadiness 12, listening on 0.0.0.0:8765
+2025-05-17T10:44:29+0000: Loaded event sources: syscall
+2025-05-17T10:44:29+0000: Enabled event sources: syscall
+2025-05-17T10:44:29+0000: Opening 'syscall' source with modern BPF probe.
+2025-05-17T10:44:29+0000: One ring buffer every '2' CPUs.
+hibana@mac robot_dreams_petclinic % kubectl run shelltest --rm -i --tty --image=alpine -- /bin/sh
+
+If you don't see a command prompt, try pressing enter.
+
+/ # # touch /bin/evil_script.sh
+/ # touch /bin/evil_script.sh
+/ # chmod +x /bin/evil_script.sh
+/ # exit
+Session ended, resume using 'kubectl attach shelltest -c shelltest -i -t' command when the pod is running
+pod "shelltest" deleted
+hibana@mac robot_dreams_petclinic % make falco-logs                                              
+Makefile:39: warning: overriding commands for target `falco-logs'
+Makefile:35: warning: ignoring old commands for target `falco-logs'
+kubectl logs -n kube-system -l app=falco
+Defaulted container "falco" out of: falco, init-pipe (init)
+2025-05-17T10:44:28+0000: System info: Linux version 6.13.7-orbstack-00283-g9d1400e7e9c6 (orbstack@builder) (ClangBuiltLinux clang version 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed), ClangBuiltLinux LLD 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed)) #104 SMP Mon Mar 17 06:15:48 UTC 2025
+2025-05-17T10:44:28+0000: Loading rules from:
+2025-05-17T10:44:29+0000:    /etc/falco/falco_rules.yaml | schema validation: ok
+2025-05-17T10:44:29+0000:    /etc/falco/falco_rules.local.yaml | schema validation: none
+2025-05-17T10:44:29+0000: The chosen syscall buffer dimension is: 8388608 bytes (8 MBs)
+2025-05-17T10:44:29+0000: Starting health webserver with threadiness 12, listening on 0.0.0.0:8765
+2025-05-17T10:44:29+0000: Loaded event sources: syscall
+2025-05-17T10:44:29+0000: Enabled event sources: syscall
+2025-05-17T10:44:29+0000: Opening 'syscall' source with modern BPF probe.
+2025-05-17T10:44:29+0000: One ring buffer every '2' CPUs.
+hibana@mac robot_dreams_petclinic % kubectl run shelltest --rm -i --tty --image=alpine -- /bin/sh
+If you don't see a command prompt, try pressing enter.
+/ # touch /bin/evil_script.sh
+/ # chmod +x /bin/evil_script.sh
+/ # ^C
+Session ended, resume using 'kubectl attach shelltest -c shelltest -i -t' command when the pod is running
+pod "shelltest" deleted
+hibana@mac robot_dreams_petclinic % kubectl attach shelltest -c shelltest -i -t
+Error from server (NotFound): pods "shelltest" not found
+hibana@mac robot_dreams_petclinic % make falco-logs
+Makefile:39: warning: overriding commands for target `falco-logs'
+Makefile:35: warning: ignoring old commands for target `falco-logs'
+kubectl logs -n kube-system -l app=falco
+Defaulted container "falco" out of: falco, init-pipe (init)
+2025-05-17T10:44:29+0000: Opening 'syscall' source with modern BPF probe.
+2025-05-17T10:44:29+0000: One ring buffer every '2' CPUs.
+2025-05-17T10:44:48.050940957+0000: Critical Fileless execution via memfd_create (container_start_ts=1747476726295519499 proc_cwd= evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_name=<NA>)
+2025-05-17T10:45:01.534825266+0000: Critical Executing binary not part of base image (proc_exe=mount proc_sname= gparent=<NA> proc_exe_ino_ctime=1747476829902213664 proc_exe_ino_mtime=5587654956884332544 proc_exe_ino_ctime_duration_proc_start=1871632418560 proc_cwd=./ container_start_ts=1747476829452185700 evt_type=execve user=root user_uid=0 user_loginuid=-1 process=mount proc_exepath=/usr/bin/mount parent=<NA> command=mount -t tmpfs -o size=12591759360,noswap tmpfs /var/lib/kubelet/pods/6866e1b0-ebd6-42ae-9ccc-6a67ce78051e/volumes/kubernetes.io~projected/kube-api-access-7lqbz terminal=0 exe_flags=EXE_WRITABLE|EXE_UPPER_LAYER container_id= container_name=<NA>)
+2025-05-17T10:45:03.363883699+0000: Notice A shell was spawned in a container with an attached terminal (evt_type=execve user=root user_uid=0 user_loginuid=-1 process=sh proc_exepath=/bin/busybox parent=containerd-shim command=sh terminal=34816 exe_flags=EXE_WRITABLE|EXE_LOWER_LAYER container_id=54e351f8ca95 container_name=<NA>)
+2025-05-17T10:45:08.051421337+0000: Critical Fileless execution via memfd_create (container_start_ts=1747476726295519499 proc_cwd= evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_name=<NA>)
+2025-05-17T10:45:22.444933248+0000: Critical Executing binary not part of base image (proc_exe=umount proc_sname= gparent=<NA> proc_exe_ino_ctime=1747476829902213664 proc_exe_ino_mtime=5587654956884332544 proc_exe_ino_ctime_duration_proc_start=1892542572250 proc_cwd=./ container_start_ts=1747476829452185700 evt_type=execve user=root user_uid=0 user_loginuid=-1 process=umount proc_exepath=/usr/bin/umount parent=<NA> command=umount /var/lib/kubelet/pods/6866e1b0-ebd6-42ae-9ccc-6a67ce78051e/volumes/kubernetes.io~projected/kube-api-access-7lqbz terminal=0 exe_flags=EXE_WRITABLE|EXE_UPPER_LAYER container_id= container_name=<NA>)
+2025-05-17T10:45:28.052478135+0000: Critical Fileless execution via memfd_create (container_start_ts=1747476726295519499 proc_cwd= evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_name=<NA>)
+2025-05-17T10:45:34.833215601+0000: Critical Executing binary not part of base image (proc_exe=mount proc_sname= gparent=<NA> proc_exe_ino_ctime=1747476829902213664 proc_exe_ino_mtime=5587654956884332544 proc_exe_ino_ctime_duration_proc_start=1904930632270 proc_cwd= container_start_ts=1747476829452185700 evt_type=execve user=root user_uid=0 user_loginuid=-1 process=mount proc_exepath=/usr/bin/mount parent=<NA> command=mount -t tmpfs -o size=12591759360,noswap tmpfs /var/lib/kubelet/pods/a2828ee2-2702-4aa9-b6ab-c32a35953d44/volumes/kubernetes.io~projected/kube-api-access-6cqzp terminal=0 exe_flags=EXE_WRITABLE|EXE_UPPER_LAYER container_id= container_name=<NA>)
+2025-05-17T10:45:36.592474969+0000: Notice A shell was spawned in a container with an attached terminal (evt_type=execve user=root user_uid=0 user_loginuid=-1 process=sh proc_exepath=/bin/busybox parent=containerd-shim command=sh terminal=34816 exe_flags=EXE_WRITABLE|EXE_LOWER_LAYER container_id=3ab5329f27b1 container_name=<NA>)
+```
