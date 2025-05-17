@@ -22,5 +22,4 @@
               orbstack   orbstack   orbstack   
     hibana@mac robot_dreams_petclinic % kubectl config current-context
     minikube
-
 ```
