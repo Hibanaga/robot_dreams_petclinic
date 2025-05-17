@@ -21,20 +21,23 @@ spec:
       containers:
         - name: redis
           image: redis:alpine
+          command: ["redis-server"]
+          args:
+            - "--port"
+            - "6379"
+            - "--dir"
+            - "/mnt/redis/data"
+            - "--appendonly"
+            - "yes"
           ports:
             - containerPort: 6379
           volumeMounts:
             - name: redis-data
               mountPath: /mnt/redis/data
-            - name: redis-backup
-              mountPath: /mnt/redis/backup
       volumes:
         - name: redis-data
           persistentVolumeClaim:
             claimName: redis-data-pvc
-        - name: redis-backup
-          persistentVolumeClaim:
-            claimName: redis-backup-pvc
   volumeClaimTemplates:
     - metadata:
         name: redis-data
