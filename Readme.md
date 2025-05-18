@@ -635,3 +635,433 @@ Defaulted container "falco" out of: falco, init-pipe (init)
 2025-05-17T10:45:34.833215601+0000: Critical Executing binary not part of base image (proc_exe=mount proc_sname= gparent=<NA> proc_exe_ino_ctime=1747476829902213664 proc_exe_ino_mtime=5587654956884332544 proc_exe_ino_ctime_duration_proc_start=1904930632270 proc_cwd= container_start_ts=1747476829452185700 evt_type=execve user=root user_uid=0 user_loginuid=-1 process=mount proc_exepath=/usr/bin/mount parent=<NA> command=mount -t tmpfs -o size=12591759360,noswap tmpfs /var/lib/kubelet/pods/a2828ee2-2702-4aa9-b6ab-c32a35953d44/volumes/kubernetes.io~projected/kube-api-access-6cqzp terminal=0 exe_flags=EXE_WRITABLE|EXE_UPPER_LAYER container_id= container_name=<NA>)
 2025-05-17T10:45:36.592474969+0000: Notice A shell was spawned in a container with an attached terminal (evt_type=execve user=root user_uid=0 user_loginuid=-1 process=sh proc_exepath=/bin/busybox parent=containerd-shim command=sh terminal=34816 exe_flags=EXE_WRITABLE|EXE_LOWER_LAYER container_id=3ab5329f27b1 container_name=<NA>)
 ```
+
+Опціональне завдання:
+
+* Виконайте минулі два завдання, створивши helm-chart.
+
+```makefile
+hibana@mac robot_dreams_petclinic % helm version
+version.BuildInfo{Version:"v3.17.3", GitCommit:"e4da49785aa6e6ee2b86efd5dd9e43400318262b", GitTreeState:"clean", GoVersion:"go1.24.2"}
+
+hibana@mac robot_dreams_petclinic %  helm repo add bitnami https://charts.bitnami.com/bitnami
+"bitnami" has been added to your repositories
+hibana@mac robot_dreams_petclinic % helm search repo bitnami
+NAME                                            CHART VERSION   APP VERSION     DESCRIPTION                                       
+bitnami/airflow                                 24.1.0          3.0.1           Apache Airflow is a tool to express and execute...
+bitnami/apache                                  11.3.8          2.4.63          Apache HTTP Server is an open-source HTTP serve...
+
+
+
+hibana@mac robot_dreams_petclinic % helm install bitnami/redis --generate-name
+NAME: redis-1747553853
+LAST DEPLOYED: Sun May 18 09:37:36 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: redis
+CHART VERSION: 21.1.3
+APP VERSION: 8.0.1
+
+Did you know there are enterprise versions of the Bitnami catalog? For enhanced secure software supply chain features, unlimited pulls from Docker, LTS support, or application customization, see Bitnami Premium or Tanzu Application Catalog. See https://www.arrow.com/globalecs/na/vendors/bitnami for more information.
+
+** Please be patient while the chart is being deployed **
+
+Redis&reg; can be accessed on the following DNS names from within your cluster:
+
+    redis-1747553853-master.default.svc.cluster.local for read/write operations (port 6379)
+    redis-1747553853-replicas.default.svc.cluster.local for read-only operations (port 6379)
+
+
+
+To get your password run:
+
+    export REDIS_PASSWORD=$(kubectl get secret --namespace default redis-1747553853 -o jsonpath="{.data.redis-password}" | base64 -d)
+
+To connect to your Redis&reg; server:
+
+1. Run a Redis&reg; pod that you can use as a client:
+
+   kubectl run --namespace default redis-client --restart='Never'  --env REDIS_PASSWORD=$REDIS_PASSWORD  --image docker.io/bitnami/redis:8.0.1-debian-12-r1 --command -- sleep infinity
+
+   Use the following command to attach to the pod:
+
+   kubectl exec --tty -i redis-client \
+   --namespace default -- bash
+
+2. Connect using the Redis&reg; CLI:
+   REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h redis-1747553853-master
+   REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h redis-1747553853-replicas
+
+To connect to your database from outside the cluster execute the following commands:
+
+    kubectl port-forward --namespace default svc/redis-1747553853-master 6379:6379 &
+    REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h 127.0.0.1 -p 6379
+
+WARNING: There are "resources" sections in the chart not set. Using "resourcesPreset" is not recommended for production. For production installations, please set the following values according to your workload needs:
+  - replica.resources
+  - master.resources
++info https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                          READY   STATUS     RESTARTS   AGE
+redis-1747553853-master-0     1/1     Running    0          5m43s
+redis-1747553853-replicas-0   1/1     Running    0          5m43s
+redis-1747553853-replicas-1   1/1     Running    0          5m11s
+redis-1747553853-replicas-2   1/1     Running    0          4m49s
+
+ helm list --all-namespaces
+ NAME                    NAMESPACE       REVISION        UPDATED                                 STATUS          CHART           APP VERSION
+redis-1747553853        default         1               2025-05-18 09:37:36.211215 +0200 CEST   deployed        redis-21.1.3    8.0.1      
+```
+
+## Run install with limited replicas count ([source](https://github.com/helm/helm/issues/2516)): 
+```textmate
+helm install redis-stateful bitnami/redis --set replica.replicaCount=2
+
+
+hibana@mac robot_dreams_petclinic % helm install redis-stateful bitnami/redis --set replica.replicaCount=2
+NAME: redis-stateful
+LAST DEPLOYED: Sun May 18 09:51:44 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: redis
+CHART VERSION: 21.1.3
+APP VERSION: 8.0.1
+
+Did you know there are enterprise versions of the Bitnami catalog? For enhanced secure software supply chain features, unlimited pulls from Docker, LTS support, or application customization, see Bitnami Premium or Tanzu Application Catalog. See https://www.arrow.com/globalecs/na/vendors/bitnami for more information.
+
+** Please be patient while the chart is being deployed **
+
+Redis&reg; can be accessed on the following DNS names from within your cluster:
+
+    redis-stateful-master.default.svc.cluster.local for read/write operations (port 6379)
+    redis-stateful-replicas.default.svc.cluster.local for read-only operations (port 6379)
+
+
+
+To get your password run:
+
+    export REDIS_PASSWORD=$(kubectl get secret --namespace default redis-stateful -o jsonpath="{.data.redis-password}" | base64 -d)
+
+To connect to your Redis&reg; server:
+
+1. Run a Redis&reg; pod that you can use as a client:
+
+   kubectl run --namespace default redis-client --restart='Never'  --env REDIS_PASSWORD=$REDIS_PASSWORD  --image docker.io/bitnami/redis:8.0.1-debian-12-r1 --command -- sleep infinity
+
+   Use the following command to attach to the pod:
+
+   kubectl exec --tty -i redis-client \
+   --namespace default -- bash
+
+2. Connect using the Redis&reg; CLI:
+   REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h redis-stateful-master
+   REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h redis-stateful-replicas
+
+To connect to your database from outside the cluster execute the following commands:
+
+    kubectl port-forward --namespace default svc/redis-stateful-master 6379:6379 &
+    REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h 127.0.0.1 -p 6379
+
+WARNING: There are "resources" sections in the chart not set. Using "resourcesPreset" is not recommended for production. For production installations, please set the following values according to your workload needs:
+  - replica.resources
+  - master.resources
++info https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                        READY   STATUS    RESTARTS   AGE
+redis-stateful-master-0     1/1     Running   0          79s
+redis-stateful-replicas-0   1/1     Running   0          79s
+redis-stateful-replicas-1   1/1     Running   0          51s
+
+
+hibana@mac robot_dreams_petclinic % export REDIS_PASSWORD=$(kubectl get secret --namespace default redis-stateful -o jsonpath="{.data.redis-password}" | base64 -d)
+hibana@mac robot_dreams_petclinic % kubectl run --namespace default redis-client --restart='Never'  --env REDIS_PASSWORD=$REDIS_PASSWORD  --image docker.io/bitnami/redis:8.0.1-debian-12-r1 --command -- sleep infinity
+pod/redis-client created
+
+hibana@mac robot_dreams_petclinic % kubectl exec -it redis-client -n default -- bash
+I have no name!@redis-client:/$ redis-cli -h redis-stateful-master -a "$REDIS_PASSWORD"
+Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+redis-stateful-master:6379> keys *
+(empty array)
+redis-stateful-master:6379> set hello world
+OK
+redis-stateful-master:6379> keys *
+1) "hello"
+redis-stateful-master:6379> get hello
+"world"
+
+@redis-client:/$ redis-cli -h redis-stateful-replicas -a "$REDIS_PASSWORD"
+redis-stateful-replicas:6379> keys *
+1) "hello"
+redis-stateful-replicas:6379> 
+I have no name!@redis-client:/$ redis-cli -h redis-stateful-replicas -a "$REDIS_PASSWORD"
+Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+redis-stateful-replicas:6379> keys *
+1) "hello"
+redis-stateful-replicas:6379> set world hello
+(error) READONLY You can't write against a read only replica.
+
+
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                        READY   STATUS    RESTARTS   AGE
+redis-stateful-master-0     1/1     Running   0          6m24s
+redis-stateful-replicas-0   1/1     Running   0          6m24s
+redis-stateful-replicas-1   1/1     Running   0          5m58s
+hibana@mac robot_dreams_petclinic % export REDIS_PASSWORD=$(kubectl get secret --namespace default redis-stateful -o jsonpath="{.data.redis-password}" | base64 -d)
+hibana@mac robot_dreams_petclinic %  kubectl run --namespace default redis-client --restart='Never'  --env REDIS_PASSWORD=$REDIS_PASSWORD  --image docker.io/bitnami/redis:8.0.1-debian-12-r1 --command -- sleep infinity
+pod/redis-client created
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                        READY   STATUS    RESTARTS   AGE
+redis-client                1/1     Running   0          5s
+redis-stateful-master-0     1/1     Running   0          6m50s
+redis-stateful-replicas-0   1/1     Running   0          6m50s
+redis-stateful-replicas-1   1/1     Running   0          6m24s
+hibana@mac robot_dreams_petclinic % kubectl exec --tty -i redis-client \
+   --namespace defdis-client:/$ REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h redis-stateful-master
+redis-stateful-master:6379> :/$ REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h redi
+I have no name!@redis-client:/$ REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli -h redis-stateful-master
+redis-stateful-master:6379> keys *
+1) "hello"
+```
+
+### Issue with that implementation
+
+```textmate
+При такій імплементації виникає проблема з тим що при кожному 
+перезапуску minikubeми повинні перестворювати pod для redis-client
+```
+
+```textmate
+Для виправлення данної проблеми було створено makefile щоб пришвидчити данний процес
+без потреби лізти в документацію і шукати потрібні нам команди.
+
+Тому що актуальна конфігурація не перезапускає под redis-client.
+```
+
+```makefile
+helm-apply:
+	kubectl delete pod redis-client -n default --ignore-not-found
+	REDIS_PASSWORD=$$(kubectl get secret --namespace default redis-stateful -o jsonpath="{.data.redis-password}" | base64 -d) && \
+	kubectl run redis-client \
+	  --namespace default \
+	  --restart='Never' \
+	  --env REDIS_PASSWORD=$$REDIS_PASSWORD \
+	  --image docker.io/bitnami/redis:8.0.1-debian-12-r1 \
+	  --command -- sleep infinity
+helm-exec:
+	kubectl exec -it redis-client -n default -- bash
+helm-exec-master:
+	REDIS_PASSWORD=$$(kubectl get secret --namespace default redis-stateful -o jsonpath="{.data.redis-password}" | base64 -d) && \
+	kubectl exec -it redis-client -n default -- bash -c "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli -h redis-stateful-master"
+```
+
+```textmate
+hibana@mac robot_dreams_petclinic % minikube stop
+✋  Stopping node "minikube"  ...
+🛑  Powering off "minikube" via SSH ...
+🛑  1 node stopped.
+hibana@mac robot_dreams_petclinic % minikube start
+😄  minikube v1.35.0 on Darwin 15.3.2 (arm64)
+✨  Using the docker driver based on existing profile
+👍  Starting "minikube" primary control-plane node in "minikube" cluster
+🚜  Pulling base image v0.0.46 ...
+🔄  Restarting existing docker container for "minikube" ...
+🐳  Preparing Kubernetes v1.32.0 on Docker 27.4.1 ...
+🔎  Verifying Kubernetes components...
+    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
+🌟  Enabled addons: storage-provisioner, default-storageclass
+🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                        READY   STATUS    RESTARTS      AGE
+redis-client                0/1     Error     0             103s
+redis-stateful-master-0     1/1     Running   4 (80s ago)   42m
+redis-stateful-replicas-0   0/1     Running   4 (80s ago)   42m
+redis-stateful-replicas-1   0/1     Running   4 (80s ago)   41m
+hibana@mac robot_dreams_petclinic % 
+
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                        READY   STATUS    RESTARTS      AGE
+redis-client                0/1     Error     0             103s
+redis-stateful-master-0     1/1     Running   4 (80s ago)   42m
+redis-stateful-replicas-0   0/1     Running   4 (80s ago)   42m
+redis-stateful-replicas-1   0/1     Running   4 (80s ago)   41m
+hibana@mac robot_dreams_petclinic % make helm-apply
+Makefile:38: warning: overriding commands for target `falco-logs'
+Makefile:34: warning: ignoring old commands for target `falco-logs'
+kubectl delete pod redis-client -n default --ignore-not-found
+pod "redis-client" deleted
+REDIS_PASSWORD=$(kubectl get secret --namespace default redis-stateful -o jsonpath="{.data.redis-password}" | base64 -d) && \
+        kubectl run redis-client \
+          --namespace default \
+          --restart='Never' \
+          --env REDIS_PASSWORD=$REDIS_PASSWORD \
+          --image docker.io/bitnami/redis:8.0.1-debian-12-r1 \
+          --command -- sleep infinity
+pod/redis-client created
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                        READY   STATUS    RESTARTS        AGE
+redis-client                1/1     Running   0               14s
+redis-stateful-master-0     1/1     Running   4 (3m44s ago)   44m
+redis-stateful-replicas-0   1/1     Running   4 (3m44s ago)   44m
+redis-stateful-replicas-1   1/1     Running   4 (3m44s ago)   44m
+
+hibana@mac robot_dreams_petclinic % make helm-exec-master
+Makefile:38: warning: overriding commands for target `falco-logs'
+Makefile:34: warning: ignoring old commands for target `falco-logs'
+REDIS_PASSWORD=$(kubectl get secret --namespace default redis-stateful -o jsonpath="{.data.redis-password}" | base64 -d) && \
+        kubectl exec -it redis-client -n default -- bash -c "REDISCLI_AUTH=$REDIS_PASSWORD redis-cli -h redis-stateful-master"
+redis-stateful-master:6379> keys *
+1) "hello"
+```
+
+```textmate
+ Для виправлення цієї помилки було створено stetufull set для взаємодії з bitnami/redis
+ і спрощеної взаємодії з подами
+```
+
+```redis-client-service.yaml```
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-client
+  namespace: default
+  labels:
+    app: redis-client
+spec:
+  ports:
+    - port: 6379
+      name: redis
+  clusterIP: None
+  selector:
+    app: redis-client
+```
+
+```redis-client.yaml```
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-client
+  namespace: default
+spec:
+  serviceName: redis-client
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-client
+  template:
+    metadata:
+      labels:
+        app: redis-client
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: redis-cli
+          image: docker.io/bitnami/redis:8.0.1-debian-12-r1
+          command:
+            - "sleep"
+            - "infinity"
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-stateful
+                  key: redis-password
+          tty: true
+          stdin: true
+```
+
+```textmate
+Для спрощеного перестворення під час дебагу і більш детального опису що робив при перезапусках кластера
+```
+
+```makefile
+helm-client-delete:
+	helm uninstall redis-stateful --ignore-not-found
+	kubectl delete service redis-client --ignore-not-found
+	kubectl delete deployment redis-client --ignore-not-found
+	kubectl delete pvc -l app=redis-client --ignore-not-found
+	kubectl delete secret redis-stateful --ignore-not-found
+
+helm-client-apply:
+	helm repo add bitnami https://charts.bitnami.com/bitnami || true
+	helm repo update
+	helm install redis-stateful bitnami/redis --set replica.replicaCount=2
+	kubectl apply -f redis-client.yaml
+	kubectl apply -f redis-client-service.yaml
+
+helm-client-recreate: helm-client-delete helm-client-apply
+
+helm-client-exec:
+	REDIS_PASSWORD=$$(kubectl get secret --namespace default redis-stateful -o jsonpath="{.data.redis-password}" | base64 -d) && \
+	kubectl exec --stdin --tty redis-client-0 -- bash -c "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli -h redis-stateful-master"
+```
+
+## Logs:
+```textmate
+Зараз при перезапуску minikube, ми бачимо що логіка взаємодії подами дуже спрощенна, 
+тому що ми не виконуємо 30 команд щоб просто все знову працювало коректно, і внесли
+трошки автоматизації до процесів
+```
+
+```large_log
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                        READY   STATUS    RESTARTS   AGE
+redis-client-0              1/1     Running   0          9m10s
+redis-stateful-master-0     1/1     Running   0          50s
+redis-stateful-replicas-0   1/1     Running   0          50s
+redis-stateful-replicas-1   1/1     Running   0          23s
+hibana@mac robot_dreams_petclinic % minikube stop
+✋  Stopping node "minikube"  ...
+🛑  Powering off "minikube" via SSH ...
+🛑  1 node stopped.
+hibana@mac robot_dreams_petclinic % minikube start
+😄  minikube v1.35.0 on Darwin 15.3.2 (arm64)
+✨  Using the docker driver based on existing profile
+👍  Starting "minikube" primary control-plane node in "minikube" cluster
+🚜  Pulling base image v0.0.46 ...
+🔄  Restarting existing docker container for "minikube" ...
+🐳  Preparing Kubernetes v1.32.0 on Docker 27.4.1 ...
+🔎  Verifying Kubernetes components...
+    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
+🌟  Enabled addons: storage-provisioner, default-storageclass
+🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+hibana@mac robot_dreams_petclinic % minikube status
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                        READY   STATUS    RESTARTS      AGE
+redis-client-0              1/1     Running   1 (28s ago)   13m
+redis-stateful-master-0     0/1     Running   1 (38s ago)   4m48s
+redis-stateful-replicas-0   0/1     Running   1 (38s ago)   4m48s
+redis-stateful-replicas-1   0/1     Running   1 (38s ago)   4m21s
+hibana@mac robot_dreams_petclinic % kubectl get pods
+NAME                        READY   STATUS    RESTARTS      AGE
+redis-client-0              1/1     Running   1 (84s ago)   14m
+redis-stateful-master-0     1/1     Running   1 (94s ago)   5m44s
+redis-stateful-replicas-0   1/1     Running   1 (94s ago)   5m44s
+redis-stateful-replicas-1   1/1     Running   1 (94s ago)   5m17s
+hibana@mac robot_dreams_petclinic % make helm-client-exec
+Makefile:38: warning: overriding commands for target `falco-logs'
+Makefile:34: warning: ignoring old commands for target `falco-logs'
+REDIS_PASSWORD=$(kubectl get secret --namespace default redis-stateful -o jsonpath="{.data.redis-password}" | base64 -d) && \
+        kubectl exec --stdin --tty redis-client-0 -- bash -c "REDISCLI_AUTH=$REDIS_PASSWORD redis-cli -h redis-stateful-master"
+redis-stateful-master:6379> keys *
+1) "hello"
+redis-stateful-master:6379> get hello
+"world"
+```

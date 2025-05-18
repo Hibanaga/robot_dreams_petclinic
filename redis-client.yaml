@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-client
+  namespace: default
+spec:
+  serviceName: redis-client
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-client
+  template:
+    metadata:
+      labels:
+        app: redis-client
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: redis-cli
+          image: docker.io/bitnami/redis:8.0.1-debian-12-r1
+          command:
+            - "sleep"
+            - "infinity"
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-stateful
+                  key: redis-password
+          tty: true
+          stdin: true
