@@ -56,11 +56,10 @@ helm-exec-master:
 	kubectl exec -it redis-client -n default -- bash -c "REDISCLI_AUTH=$$REDIS_PASSWORD redis-cli -h redis-stateful-master"
 
 helm-client-delete:
-	helm uninstall redis-stateful --ignore-not-found
+	helm uninstall redis-stateful || true
+	kubectl delete statefulset redis-client --ignore-not-found
 	kubectl delete service redis-client --ignore-not-found
-	kubectl delete deployment redis-client --ignore-not-found
 	kubectl delete pvc -l app=redis-client --ignore-not-found
-	kubectl delete secret redis-stateful --ignore-not-found
 
 helm-client-apply:
 	helm repo add bitnami https://charts.bitnami.com/bitnami || true

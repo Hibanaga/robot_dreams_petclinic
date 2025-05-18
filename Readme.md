@@ -986,11 +986,10 @@ spec:
 
 ```makefile
 helm-client-delete:
-	helm uninstall redis-stateful --ignore-not-found
+	helm uninstall redis-stateful || true
+	kubectl delete statefulset redis-client --ignore-not-found
 	kubectl delete service redis-client --ignore-not-found
-	kubectl delete deployment redis-client --ignore-not-found
 	kubectl delete pvc -l app=redis-client --ignore-not-found
-	kubectl delete secret redis-stateful --ignore-not-found
 
 helm-client-apply:
 	helm repo add bitnami https://charts.bitnami.com/bitnami || true
@@ -1064,4 +1063,189 @@ redis-stateful-master:6379> keys *
 1) "hello"
 redis-stateful-master:6379> get hello
 "world"
+```
+
+# Falco ([source](https://falco.org/docs/setup/kubernetes/)):
+```textmate
+hibana@mac robot_dreams_petclinic % helm repo list
+NAME    URL                               
+bitnami https://charts.bitnami.com/bitnami
+hibana@mac robot_dreams_petclinic % helm chart list
+Error: unknown command "chart" for "helm"
+Run 'helm --help' for usage.
+hibana@mac robot_dreams_petclinic % helm repo add falcosecurity https://falcosecurity.github.io/charts
+"falcosecurity" has been added to your repositories
+hibana@mac robot_dreams_petclinic % helm repo update
+Hang tight while we grab the latest from your chart repositories...
+...Successfully got an update from the "falcosecurity" chart repository
+...Successfully got an update from the "bitnami" chart repository
+Update Complete. ⎈Happy Helming!⎈
+hibana@mac robot_dreams_petclinic % kubectl get pods
+No resources found in default namespace.
+hibana@mac robot_dreams_petclinic % helm install --replace falco --namespace falco --create-namespace --set tty=true falcosecurity/falco
+NAME: falco
+LAST DEPLOYED: Sun May 18 12:05:27 2025
+NAMESPACE: falco
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+Falco agents are spinning up on each node in your cluster. After a few
+seconds, they are going to start monitoring your containers looking for
+security issues.
+
+
+No further action should be required.
+
+
+Tip: 
+You can easily forward Falco events to Slack, Kafka, AWS Lambda and more with falcosidekick. 
+Full list of outputs: https://github.com/falcosecurity/charts/tree/master/charts/falcosidekick.
+You can enable its deployment with `--set falcosidekick.enabled=true` or in your values.yaml. 
+See: https://github.com/falcosecurity/charts/blob/master/charts/falcosidekick/values.yaml for configuration values.
+
+
+hibana@mac robot_dreams_petclinic % kubectl get pods -n falco
+NAME          READY   STATUS    RESTARTS   AGE
+falco-s6hdj   2/2     Running   0          83s
+hibana@mac robot_dreams_petclinic % kubectl logs -n falco -l app.kubernetes.io/name=falco --tail=100
+Defaulted container "falco" out of: falco, falcoctl-artifact-follow, falco-driver-loader (init), falcoctl-artifact-install (init)
+Sun May 18 10:05:56 2025: Falco version: 0.40.0 (aarch64)
+Sun May 18 10:05:56 2025: Falco initialized with configuration files:
+Sun May 18 10:05:56 2025:    /etc/falco/config.d/engine-kind-falcoctl.yaml | schema validation: ok
+Sun May 18 10:05:56 2025:    /etc/falco/falco.yaml | schema validation: ok
+Sun May 18 10:05:56 2025: System info: Linux version 6.13.7-orbstack-00283-g9d1400e7e9c6 (orbstack@builder) (ClangBuiltLinux clang version 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed), ClangBuiltLinux LLD 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed)) #104 SMP Mon Mar 17 06:15:48 UTC 2025
+Sun May 18 10:05:56 2025: Loading rules from:
+Sun May 18 10:05:56 2025:    /etc/falco/falco_rules.yaml | schema validation: ok
+Sun May 18 10:05:56 2025: Hostname value has been overridden via environment variable to: minikube
+Sun May 18 10:05:56 2025: The chosen syscall buffer dimension is: 8388608 bytes (8 MBs)
+Sun May 18 10:05:56 2025: Starting health webserver with threadiness 12, listening on 0.0.0.0:8765
+Sun May 18 10:05:56 2025: Loaded event sources: syscall
+Sun May 18 10:05:56 2025: Enabled event sources: syscall
+Sun May 18 10:05:56 2025: Opening 'syscall' source with modern BPF probe.
+Sun May 18 10:05:56 2025: One ring buffer every '2' CPUs.
+10:06:08.625075265: Critical Fileless execution via memfd_create (container_start_ts=1747553366389477916 proc_cwd= evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_image=<NA> container_image_tag=<NA> container_name=<NA> k8s_ns=<NA> k8s_pod_name=<NA>)
+10:06:28.627053175: Critical Fileless execution via memfd_create (container_start_ts=1747553366389477916 proc_cwd=./ evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_image=<NA> container_image_tag=<NA> container_name=<NA> k8s_ns=<NA> k8s_pod_name=<NA>)
+10:06:48.625021057: Critical Fileless execution via memfd_create (container_start_ts=1747553366389477916 proc_cwd=./ evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_image=<NA> container_image_tag=<NA> container_name=<NA> k8s_ns=<NA> k8s_pod_name=<NA>)
+10:07:08.626661749: Critical Fileless execution via memfd_create (container_start_ts=1747553366389477916 proc_cwd=./ evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_image=<NA> container_image_tag=<NA> container_name=<NA> k8s_ns=<NA> k8s_pod_name=<NA>)
+10:07:28.625338292: Critical Fileless execution via memfd_create (container_start_ts=1747553366389477916 proc_cwd=./ evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_image=<NA> container_image_tag=<NA> container_name=<NA> k8s_ns=<NA> k8s_pod_name=<NA>)
+10:07:48.624506838: Critical Fileless execution via memfd_create (container_start_ts=1747553366389477916 proc_cwd=./ evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_image=<NA> container_image_tag=<NA> container_name=<NA> k8s_ns=<NA> k8s_pod_name=<NA>)
+```
+
+## Fix Issue with permission issue:
+```textmate
+#
+hibana@mac robot_dreams_petclinic % helm uninstall falco --namespace falco
+release "falco" uninstalled
+hibana@mac robot_dreams_petclinic % helm install falco falcosecurity/falco --namespace falco --create-namespace --set falcosidekick.enabled=true
+NAME: falco
+LAST DEPLOYED: Sun May 18 12:15:53 2025
+NAMESPACE: falco
+STATUS: deployed
+REVISION: 1
+NOTES:
+Falco agents are spinning up on each node in your cluster. After a few
+seconds, they are going to start monitoring your containers looking for
+security issues.
+
+
+No further action should be required.
+hibana@mac robot_dreams_petclinic % kubectl get pods -n falco
+NAME                                   READY   STATUS    RESTARTS   AGE
+falco-falcosidekick-7d785bff85-n6rtj   1/1     Running   0          56s
+falco-falcosidekick-7d785bff85-s8m67   1/1     Running   0          56s
+falco-thr59                            2/2     Running   0          56s
+hibana@mac robot_dreams_petclinic % minikube stop
+✋  Stopping node "minikube"  ...
+🛑  Powering off "minikube" via SSH ...
+🛑  1 node stopped.
+hibana@mac robot_dreams_petclinic % minikube start
+😄  minikube v1.35.0 on Darwin 15.3.2 (arm64)
+✨  Using the docker driver based on existing profile
+👍  Starting "minikube" primary control-plane node in "minikube" cluster
+🚜  Pulling base image v0.0.46 ...
+🔄  Restarting existing docker container for "minikube" ...
+🐳  Preparing Kubernetes v1.32.0 on Docker 27.4.1 ...
+🔎  Verifying Kubernetes components...
+    ▪ Using image gcr.io/k8s-minikube/storage-provisioner:v5
+🌟  Enabled addons: default-storageclass, storage-provisioner
+🏄  Done! kubectl is now configured to use "minikube" cluster and "default" namespace by default
+hibana@mac robot_dreams_petclinic % kubectl get pods -n falco
+NAME                                   READY   STATUS    RESTARTS       AGE
+falco-falcosidekick-7d785bff85-n6rtj   1/1     Running   1 (2m2s ago)   3m14s
+falco-falcosidekick-7d785bff85-s8m67   1/1     Running   1 (2m2s ago)   3m14s
+falco-thr59                            2/2     Running   2 (2m2s ago)   3m14s
+
+hibana@mac robot_dreams_petclinic % kubectl logs -n falco -l app.kubernetes.io/name=falco --tail=100
+Defaulted container "falco" out of: falco, falcoctl-artifact-follow, falco-driver-loader (init), falcoctl-artifact-install (init)
+Sun May 18 10:18:14 2025: Falco version: 0.40.0 (aarch64)
+Sun May 18 10:18:14 2025: Falco initialized with configuration files:
+Sun May 18 10:18:14 2025:    /etc/falco/config.d/engine-kind-falcoctl.yaml | schema validation: ok
+Sun May 18 10:18:14 2025:    /etc/falco/falco.yaml | schema validation: ok
+Sun May 18 10:18:14 2025: System info: Linux version 6.13.7-orbstack-00283-g9d1400e7e9c6 (orbstack@builder) (ClangBuiltLinux clang version 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed), ClangBuiltLinux LLD 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed)) #104 SMP Mon Mar 17 06:15:48 UTC 2025
+Sun May 18 10:18:14 2025: Loading rules from:
+Sun May 18 10:18:14 2025:    /etc/falco/falco_rules.yaml | schema validation: ok
+Sun May 18 10:18:14 2025: Hostname value has been overridden via environment variable to: minikube
+Sun May 18 10:18:14 2025: The chosen syscall buffer dimension is: 8388608 bytes (8 MBs)
+Sun May 18 10:18:14 2025: Starting health webserver with threadiness 12, listening on 0.0.0.0:8765
+Sun May 18 10:18:14 2025: Loaded event sources: syscall
+Sun May 18 10:18:14 2025: Enabled event sources: syscall
+Sun May 18 10:18:14 2025: Opening 'syscall' source with modern BPF probe.
+Sun May 18 10:18:14 2025: One ring buffer every '2' CPUs.
+{"hostname":"minikube","output":"10:18:15.901045861: Notice Unexpected connection to K8s API Server from container (connection=192.168.49.2:42668->10.96.0.1:443 lport=443 rport=42668 fd_type=ipv4 fd_proto=tcp evt_type=connect user=root user_uid=0 user_loginuid=-1 process=storage-provisi proc_exepath=/storage-provisioner parent=containerd-shim command=storage-provisi terminal=0 container_id=ee90b4bfa6d7 container_image=gcr.io/k8s-minikube/storage-provisioner container_image_tag=v5 container_name=k8s_storage-provisioner_storage-provisioner_kube-system_75cf460d-dd27-41e7-9d29-19b517dc730f_19 k8s_ns=<NA> k8s_pod_name=<NA>)","output_fields":{"container.id":"ee90b4bfa6d7","container.image.repository":"gcr.io/k8s-minikube/storage-provisioner","container.image.tag":"v5","container.name":"k8s_storage-provisioner_storage-provisioner_kube-system_75cf460d-dd27-41e7-9d29-19b517dc730f_19","evt.time":1747563495901045861,"evt.type":"connect","fd.l4proto":"tcp","fd.lport":443,"fd.name":"192.168.49.2:42668->10.96.0.1:443","fd.rport":42668,"fd.type":"ipv4","k8s.ns.name":null,"k8s.pod.name":null,"proc.cmdline":"storage-provisi","proc.exepath":"/storage-provisioner","proc.name":"storage-provisi","proc.pname":"containerd-shim","proc.tty":0,"user.loginuid":-1,"user.name":"root","user.uid":0},"priority":"Notice","rule":"Contact K8S API Server From Container","source":"syscall","tags":["T1565","container","k8s","maturity_stable","mitre_discovery","network"],"time":"2025-05-18T10:18:15.901045861Z"}
+{"hostname":"minikube","output":"10:18:28.625667668: Critical Fileless execution via memfd_create (container_start_ts=1747553366389477916 proc_cwd= evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_image=<NA> container_image_tag=<NA> container_name=<NA> k8s_ns=<NA> k8s_pod_name=<NA>)","output_fields":{"container.id":"","container.image.repository":null,"container.image.tag":null,"container.name":null,"container.start_ts":1747553366389477916,"evt.arg.flags":"EXE_WRITABLE|EXE_FROM_MEMFD","evt.res":"SUCCESS","evt.time":1747563508625667668,"evt.type":"execve","k8s.ns.name":null,"k8s.pod.name":null,"proc.aname[2]":null,"proc.cmdline":".runc --version","proc.cwd":"","proc.exepath":"memfd:runc","proc.name":".runc","proc.pname":null,"proc.sname":"","proc.tty":0,"user.loginuid":-1,"user.name":"root","user.uid":0},"priority":"Critical","rule":"Fileless execution via memfd_create","source":"syscall","tags":["T1620","container","host","maturity_stable","mitre_defense_evasion","process"],"time":"2025-05-18T10:18:28.625667668Z"}
+{"hostname":"minikube","output":"10:18:48.627525503: Critical Fileless execution via memfd_create (container_start_ts=1747553366389477916 proc_cwd=./ evt_res=SUCCESS proc_sname= gparent=<NA> evt_type=execve user=root user_uid=0 user_loginuid=-1 process=.runc proc_exepath=memfd:runc parent=<NA> command=.runc --version terminal=0 exe_flags=EXE_WRITABLE|EXE_FROM_MEMFD container_id= container_image=<NA> container_image_tag=<NA> container_name=<NA> k8s_ns=<NA> k8s_pod_name=<NA>)","output_fields":{"container.id":"","container.image.repository":null,"container.image.tag":null,"container.name":null,"container.start_ts":1747553366389477916,"evt.arg.flags":"EXE_WRITABLE|EXE_FROM_MEMFD","evt.res":"SUCCESS","evt.time":1747563528627525503,"evt.type":"execve","k8s.ns.name":null,"k8s.pod.name":null,"proc.aname[2]":null,"proc.cmdline":".runc --version","proc.cwd":"./","proc.exepath":"memfd:runc","proc.name":".runc","proc.pname":null,"proc.sname":"","proc.tty":0,"user.loginuid":-1,"user.name":"root","user.uid":0},"priority":"Critical","rule":"Fileless execution via memfd_create","source":"syscall","tags":["T1620","container","host","maturity_stable","mitre_defense_evasion","process"],"time":"2025-05-18T10:18:48.627525503Z"}
+```
+
+## Update with limited resources:
+```textmate
+helm upgrade falco falcosecurity/falco --namespace falco --set falcosidekick.enabled=true --set resources.limits.cpu=100m  --set resources.limits.memory=256Mi --set resources.requests.cpu=100m --set resources.requests.memory=128Mi
+
+hibana@mac robot_dreams_petclinic % helm upgrade falco falcosecurity/falco --namespace falco --set falcosidekick.enabled=true --set resources.limits.cpu=100m  --set resources.limits.memory=256Mi --set resources.requests.cpu=100m --set resources.requests.memory=128Mi
+Release "falco" has been upgraded. Happy Helming!
+NAME: falco
+LAST DEPLOYED: Sun May 18 12:24:33 2025
+NAMESPACE: falco
+STATUS: deployed
+REVISION: 2
+NOTES:
+Falco agents are spinning up on each node in your cluster. After a few
+seconds, they are going to start monitoring your containers looking for
+security issues.
+
+
+No further action should be required.
+hibana@mac robot_dreams_petclinic % helm get values falco -n falco
+USER-SUPPLIED VALUES:
+falcosidekick:
+  enabled: true
+resources:
+  limits:
+    cpu: 100m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+hibana@mac robot_dreams_petclinic % 
+hibana@mac robot_dreams_petclinic % kubectl logs -n falco -l app.kubernetes.io/name=falco --tail=100
+Defaulted container "falco" out of: falco, falcoctl-artifact-follow, falco-driver-loader (init), falcoctl-artifact-install (init)
+Sun May 18 10:24:41 2025: Falco version: 0.40.0 (aarch64)
+Sun May 18 10:24:41 2025: Falco initialized with configuration files:
+Sun May 18 10:24:41 2025:    /etc/falco/config.d/engine-kind-falcoctl.yaml | schema validation: ok
+Sun May 18 10:24:41 2025:    /etc/falco/falco.yaml | schema validation: ok
+Sun May 18 10:24:41 2025: System info: Linux version 6.13.7-orbstack-00283-g9d1400e7e9c6 (orbstack@builder) (ClangBuiltLinux clang version 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed), ClangBuiltLinux LLD 19.1.4 (https://github.com/llvm/llvm-project.git aadaa00de76ed0c4987b97450dd638f63a385bed)) #104 SMP Mon Mar 17 06:15:48 UTC 2025
+Sun May 18 10:24:41 2025: Loading rules from:
+Sun May 18 10:24:42 2025:    /etc/falco/falco_rules.yaml | schema validation: ok
+Sun May 18 10:24:42 2025: Hostname value has been overridden via environment variable to: minikube
+Sun May 18 10:24:42 2025: The chosen syscall buffer dimension is: 8388608 bytes (8 MBs)
+Sun May 18 10:24:42 2025: Starting health webserver with threadiness 12, listening on 0.0.0.0:8765
+Sun May 18 10:24:42 2025: Loaded event sources: syscall
+Sun May 18 10:24:42 2025: Enabled event sources: syscall
+Sun May 18 10:24:42 2025: Opening 'syscall' source with modern BPF probe.
+Sun May 18 10:24:42 2025: One ring buffer every '2' CPUs.
+```
+
+```textmate
+Якщо робити підсумок, тому налаштування falco за допомогою helm є в кілька разів простіше,
+але про налаштування redis, нажаль сказати те саме не можу(
 ```
