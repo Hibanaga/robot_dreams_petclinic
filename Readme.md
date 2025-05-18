@@ -1070,9 +1070,6 @@ redis-stateful-master:6379> get hello
 hibana@mac robot_dreams_petclinic % helm repo list
 NAME    URL                               
 bitnami https://charts.bitnami.com/bitnami
-hibana@mac robot_dreams_petclinic % helm chart list
-Error: unknown command "chart" for "helm"
-Run 'helm --help' for usage.
 hibana@mac robot_dreams_petclinic % helm repo add falcosecurity https://falcosecurity.github.io/charts
 "falcosecurity" has been added to your repositories
 hibana@mac robot_dreams_petclinic % helm repo update
@@ -1134,7 +1131,6 @@ Sun May 18 10:05:56 2025: One ring buffer every '2' CPUs.
 
 ## Fix Issue with permission issue:
 ```textmate
-#
 hibana@mac robot_dreams_petclinic % helm uninstall falco --namespace falco
 release "falco" uninstalled
 hibana@mac robot_dreams_petclinic % helm install falco falcosecurity/falco --namespace falco --create-namespace --set falcosidekick.enabled=true
