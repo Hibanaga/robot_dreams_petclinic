@@ -1,0 +1,52 @@
+# STEP 1: Deployment of NGINX serving from the ConfigMap
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+      volumes:
+        - name: html
+          configMap:
+            name: nginx-index
+            items:
+              - key: index.html
+                path: index.html
+
+---
+# STEP 2: LoadBalancer Service to expose externally
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-deployment
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+  labels:
+    app: nginx
+spec:
+  selector:
+    app: nginx
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

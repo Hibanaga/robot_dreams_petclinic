@@ -1,0 +1,28 @@
+# STEP 1: Create namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+---
+# STEP 2: Create replicates with busybox
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: busybox
+  namespace: dev
+  labels:
+    app: busybox
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: busybox
+  template:
+    metadata:
+      labels:
+        app: busybox
+    spec:
+      containers:
+        - name: busybox
+          image: busybox
+          command: ["sleep", "3600"]
