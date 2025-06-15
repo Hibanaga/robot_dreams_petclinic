@@ -49,6 +49,10 @@ resource "aws_db_instance" "library-db" {
   vpc_security_group_ids   = [aws_security_group.library-db-security-group.id]
   db_subnet_group_name     = aws_db_subnet_group.library.name
 
+  backup_retention_period = 7
+  monitoring_interval = 60
+  monitoring_role_arn = "arn:aws:iam::602682890304:role/rds-monitoring-role"
+
   tags = {
     Name = "library-db"
   }
