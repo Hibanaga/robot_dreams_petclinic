@@ -1,0 +1,15 @@
+To Correct:
+  - changed-files:
+In Progress:
+  - changed-files:
+To Deploy on STG:
+  - changed-files:
+CR:
+  - changed-files:
+Master:
+  - changed-files:
+Staging:
+  conditions:
+    - base-branch: 'master'
+    - changed-files:
+        - '**/*'

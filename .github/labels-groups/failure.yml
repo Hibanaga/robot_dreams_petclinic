@@ -1,0 +1,8 @@
+To Correct:
+  - changed-files:
+      - any-glob-to-any-file: '*'
+      - any-glob-to-any-file: '**'
+In Progress:
+  - changed-files:
+To Deploy on STG:
+  - changed-files:

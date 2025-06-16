@@ -1,0 +1,48 @@
+name: Label Assign Action
+
+inputs:
+  workflow-status:
+    description: The result of previous step execution
+    required: true
+  drafted:
+    description: Information about is drafted PR
+    required: true
+  event_name:
+    description: Information about type of event
+    required: true
+  ref:
+    description: The branch where the event occurred
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Log ref
+      shell: bash
+      run: |
+        echo "The value of ref is: ${{ inputs.ref }}"
+    - name: Determine label configuration path
+      id: set-config-path
+      shell: bash
+      run: |
+        if [[ "${{ inputs.drafted }}" == "true" && "${{ inputs.event_name }}" == "pull_request" ]]; then
+          echo "path=.github/labels-groups/progress.yml" >> $GITHUB_ENV
+        elif [[ "${{ inputs.ref }}" == "refs/heads/staging" ]]; then
+          echo "path=.github/labels-groups/staging.yml" >> $GITHUB_ENV
+        elif [[ "${{ inputs.ref }}" == "refs/heads/master" ]]; then
+          echo "path=.github/labels-groups/master.yml" >> $GITHUB_ENV
+        elif [[ "${{ inputs.drafted }}" == "false" && "${{ inputs.workflow-status }}" == "success" && "${{ inputs.event_name }}" == "pull_request" ]]; then
+          echo "path=.github/labels-groups/success.yml" >> $GITHUB_ENV
+        elif [[ "${{ inputs.drafted }}" == "false" && "${{ inputs.workflow-status }}" == "failure" && "${{ inputs.event_name }}" == "pull_request" ]]; then
+          echo "path=.github/labels-groups/failure.yml" >> $GITHUB_ENV
+        elif [[ "${{ inputs.drafted }}" == "false" && "${{ inputs.event_name }}" == "pull_request_review" ]]; then
+          echo "path=.github/labels-groups/ready-to-stage.yml" >> $GITHUB_ENV
+        else
+          echo "No matching conditions for label assignment."
+          exit 1
+        fi
+    - name: Apply labels
+      uses: actions/labeler@v5
+      with:
+        configuration-path: ${{ env.path }}
+        sync-labels: true
