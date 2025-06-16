@@ -1,0 +1,14 @@
+To Correct:
+  - changed-files:
+In Progress:
+  - changed-files:
+To Deploy on STG:
+  - changed-files:
+CR:
+  - changed-files:
+Staging:
+  - changed-files:
+Master:
+  - changed-files:
+      - any-glob-to-any-file: '*'
+      - any-glob-to-any-file: '**'
