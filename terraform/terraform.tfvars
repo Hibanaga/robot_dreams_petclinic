@@ -1,12 +1,12 @@
 subnets = {
   "public-1" = {
     cidr_block = "10.0.1.0/24"
-    availability_zone = "eu-north-1a"
+    aviability_zone = "eu-north-1a"
     public = true
   }
   "private-1" = {
     cidr_block = "10.0.2.0/24"
-    availability_zone = "eu-north-1b"
+    aviability_zone = "eu-north-1b"
     public = false
   }
 }

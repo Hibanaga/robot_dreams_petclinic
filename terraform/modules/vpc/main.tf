@@ -4,7 +4,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = var.name + "-vpc"
+    Name = "${var.name}-vpc"
   }
 }
 
@@ -12,7 +12,7 @@ resource "aws_internet_gateway" "gateway" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = var.name + "-gateway"
+    Name = "${var.name}-gateway"
   }
 }
 
@@ -25,6 +25,6 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = var.name + "-public-route-table"
+    Name = "${var.name}-public-route-table"
   }
 }
