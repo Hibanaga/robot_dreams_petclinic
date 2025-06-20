@@ -8,5 +8,14 @@ variable "instances" {
     instance_type = string
     subnet_key = string
     public = bool
+    key_name = string
   }))
+}
+
+variable "public_ec2_security_group_id" {
+  type = string
+}
+
+variable "private_ec2_security_group_id" {
+  type = string
 }

@@ -12,5 +12,6 @@ variable "instances" {
     instance_type = string
     subnet_key = string
     public = bool
+    key_name = string
   }))
 }

@@ -17,11 +17,13 @@ instances = {
     instance_type = "t3.micro"
     subnet_key = "public-1"
     public = true
+    key_name = "europe-stockholm-ssh-rsa-keygen"
   }
   "private-server" = {
     ami = "ami-05fcfb9614772f051"
     instance_type = "t3.micro"
     subnet_key = "private-1"
     public = false
+    key_name = "europe-stockholm-ssh-rsa-keygen"
   }
 }
