@@ -1,7 +1,349 @@
 # HM-30 -> Terraform
 
+```text
+* Створити VPC з двома серверами у публічній та приватній підмережі за допомогою Terraform, застосовуючи модулі
+  * Створіть модуль для VPC
+  * Створіть модуль для підмереж
+  * Створіть модуль для EC2-інстансів
+  * Використовуйте ці модулі в основному конфігураційному файлі для створення інфраструктури
+```
 
-```log
+## Modules
+### VPC
+```textmate
+modules/vpc/main.tf
+```
+```terraform
+resource "aws_vpc" "main" {
+  cidr_block = var.cidr_block
+  enable_dns_support = true
+  enable_dns_hostnames = true
+
+  tags = {
+    Name = "${var.name}-vpc"
+  }
+}
+
+resource "aws_internet_gateway" "gateway" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.name}-gateway"
+  }
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gateway.id
+  }
+
+  tags = {
+    Name = "${var.name}-public-route-table"
+  }
+}
+```
+
+```textmate
+modules/vpc/variables.tf
+```
+```terraform
+variable "cidr_block" {
+  type = string
+}
+
+variable "name" {
+  type = string
+}
+```
+
+```textmate
+modules/vpc/outputs.tf
+```
+```terraform
+output "vpc_id" {
+  value = aws_vpc.main.id
+}
+
+output "public_route_table_id" {
+  value = aws_route_table.public.id
+}
+```
+
+### Subnets
+```textmate
+modules/subnets/main.tf
+```
+```terraform
+resource "aws_subnet" "this" {
+  for_each = var.subnets
+
+  vpc_id = var.vpc_id
+  cidr_block = each.value.cidr_block
+  availability_zone = each.value.aviability_zone
+  map_public_ip_on_launch = each.value.public
+}
+
+resource "aws_route_table_association" "public_association" {
+  for_each = {
+    for key,value in var.subnets : key => value
+    if value.public
+  }
+
+  subnet_id = aws_subnet.this[each.key].id
+  route_table_id = var.route_table_id
+}
+```
+
+```textmate
+modules/subnets/variables.tf
+```
+```terraform
+variable "subnets" {
+  type = map(object({
+    cidr_block = string
+    aviability_zone = string
+    public = bool
+  }))
+}
+
+variable "vpc_id" {
+  type = string
+}
+
+variable "route_table_id" {
+  type = string
+}
+```
+```textmate
+modules/subnets/outputs.tf
+```
+```terraform
+output "subnet_ids" {
+  value = { for key, value in aws_subnet.this : key => value.id }
+}
+```
+### EC2
+```textmate
+modules/ec2/main.tf
+```
+```terraform
+resource "aws_instance" "this" {
+  for_each = var.instances
+
+  ami = each.value.ami
+  instance_type = each.value.instance_type
+  key_name = each.value.key_name
+  subnet_id = var.subnet_ids[each.value.subnet_key]
+  vpc_security_group_ids = [
+    each.value.public ? var.public_ec2_security_group_id : var.private_ec2_security_group_id
+  ]
+
+  tags = {
+    Name = each.key
+  }
+}
+```
+
+```textmate
+modules/ec2/variables.tf
+```
+```terraform
+variable "subnet_ids" {
+  type = map(string)
+}
+
+variable "instances" {
+  type = map(object({
+    ami = string
+    instance_type = string
+    subnet_key = string
+    public = bool
+    key_name = string
+  }))
+}
+
+variable "public_ec2_security_group_id" {
+  type = string
+}
+
+variable "private_ec2_security_group_id" {
+  type = string
+}
+```
+
+```textmate
+modules/ec2/outputs.tf
+```
+```terraform
+output "instance_ids" {
+  value = { for key,value in aws_instance.this : key => value.id }
+}
+```
+
+### Security Groups
+```textmate
+modules/security_groups/main.tf
+```
+```terraform
+
+resource "aws_security_group" "public_ec2_security_group" {
+  name = "${var.name}-public-ec2-security-group"
+  vpc_id = var.vpc_id
+
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "private_ec2_security_group" {
+  name = "${var.name}-private-ec2-security-group"
+  vpc_id = var.vpc_id
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+```
+```textmate
+modules/security_groups/variables.tf
+```
+```terraform
+variable "name" {
+  type = string
+}
+
+variable "vpc_id" {
+  type = string
+}
+```
+```textmate
+modules/security_groups/outputs.tf
+```
+```terraform
+output "public_ec2_security_group_id" {
+  value = aws_security_group.public_ec2_security_group.id
+}
+
+output "private_ec2_security_group_id" {
+  value = aws_security_group.private_ec2_security_group.id
+}
+```
+
+
+### Global Context:
+```textmate
+main.tf
+```
+```terraform
+provider "aws" {
+  region = "eu-north-1"
+}
+
+module "vpc" {
+  source = "./modules/vpc"
+  cidr_block = "10.0.0.0/16"
+  name = "advanced-terraform"
+}
+
+module "subnets" {
+  source = "./modules/subnets"
+  vpc_id = module.vpc.vpc_id
+  route_table_id = module.vpc.public_route_table_id
+  subnets = var.subnets
+}
+
+module "ec2_security_group" {
+  source = "./modules/security_groups"
+  vpc_id = module.vpc.vpc_id
+  name = "advanced-terraform"
+}
+
+module "ec2" {
+  source = "./modules/ec2"
+  subnet_ids = module.subnets.subnet_ids
+
+  instances = var.instances
+
+  public_ec2_security_group_id = module.ec2_security_group.public_ec2_security_group_id
+  private_ec2_security_group_id = module.ec2_security_group.private_ec2_security_group_id
+}
+```
+
+```textmate
+variables.tf
+```
+```terraform
+variable "subnets" {
+  type = map(object({
+    cidr_block = string
+    aviability_zone = string
+    public = bool
+  }))
+}
+
+variable "instances" {
+  type = map(object({
+    ami = string
+    instance_type = string
+    subnet_key = string
+    public = bool
+    key_name = string
+  }))
+}
+```
+
+```textmate
+terraform.tfvars
+```
+```terraform
+subnets = {
+  "public-1" = {
+    cidr_block = "10.0.1.0/24"
+    aviability_zone = "eu-north-1a"
+    public = true
+  }
+  "private-1" = {
+    cidr_block = "10.0.2.0/24"
+    aviability_zone = "eu-north-1b"
+    public = false
+  }
+}
+
+instances = {
+  "public-server" = {
+    ami = "ami-05fcfb9614772f051"
+    instance_type = "t3.micro"
+    subnet_key = "public-1"
+    public = true
+    key_name = "europe-stockholm-ssh-rsa-keygen"
+  }
+  "private-server" = {
+    ami = "ami-05fcfb9614772f051"
+    instance_type = "t3.micro"
+    subnet_key = "private-1"
+    public = false
+    key_name = "europe-stockholm-ssh-rsa-keygen"
+  }
+}
+```
+
+```text
 hibana@mac terraform % terraform plan
 
 Terraform used the selected providers to generate the following execution plan. Resource actions are indicated with the following symbols:
@@ -291,7 +633,14 @@ vpc_id = "vpc-003711a0594047037"
 
 
 ## Added Security groups to make possible connect via terminal to ec2 instances
+```textmate
+Тут був вимушений перестворювати EC2 інстанси, тому що після створення EC2 інстансів,
+вирішив перевірити чи зможу підключитись, і згадав що я забув прокинути ssh-key, а також 
+не прокинув можливість підключитись до інстансів. 
 
+Тому було прийнято вольове рішення перестворити (насправді при зміні ssh-key),
+перестворення є обов'язкове. Тому перестворив і після цього все запрацьовало.
+```
 ```textmate
 hibana@mac terraform % terraform plan
 module.vpc.aws_vpc.main: Refreshing state... [id=vpc-003711a0594047037]
