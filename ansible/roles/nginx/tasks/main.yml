@@ -1,0 +1,22 @@
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: true
+
+- name: Setting Nginx Configuration
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/default
+    mode: '0644'
+
+- name: Setting index.html
+  template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    mode: '0644'
+
+- name: Post-configuration restart nginx
+  service:
+    name: nginx
+    state: restarted
