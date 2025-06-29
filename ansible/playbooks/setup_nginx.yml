@@ -1,0 +1,7 @@
+- name: Setup Nginx web server
+  hosts: web
+  become: true
+  vars_files:
+    - ../group_vars/main.yml
+  roles:
+    - nginx

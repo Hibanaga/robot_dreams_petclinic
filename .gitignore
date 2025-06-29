@@ -1,0 +1,3 @@
+ssh-keys/*
+ansible/ssh-keys/*
+ansible/vault-pass.txt

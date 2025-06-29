@@ -1,0 +1,9 @@
+- hosts: all
+  become: yes
+  vars_files:
+    - ../group_vars/all/vault.yml
+    - ../group_vars/all/main.yml
+  roles:
+    - baseline
+    - firewalld
+    - nginx

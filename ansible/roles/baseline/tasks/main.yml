@@ -1,0 +1,16 @@
+- name: Add SSH key
+  authorized_key:
+    user: ec2-user
+    state: present
+    key: "{{ ssh_public_key }}"
+
+- name: Install baseline packages (Amazon Linux)
+  when: ansible_os_family == "RedHat"
+  dnf:
+    name:
+      - vim-enhanced
+      - git
+      - mc
+      - firewalld
+    state: present
+    update_cache: yes
