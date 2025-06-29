@@ -1,6 +1,0 @@
-- hosts: web
-  become: true
-  roles:
-    - baseline
-    - firewall
-    - nginx

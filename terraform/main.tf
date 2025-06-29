@@ -9,7 +9,7 @@ resource "aws_vpc" "ansible_vpc" {
   }
 }
 
-resource "aws_key_pair" "deployment_key" {
+resource "aws_key_pair" "europe_stockholm_key" {
   key_name   = "europe-stockholm-ssh-rsa-keygen"
   public_key = file("../ssh-keys/europe-stockholm-ssh-rsa-keygen.pub")
 }
@@ -87,7 +87,7 @@ resource "aws_instance" "web" {
   subnet_id              = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.ansible_access.id]
 
-  key_name = aws_key_pair.deployment_key.key_name
+  key_name = aws_key_pair.europe_stockholm_key.key_name
 
   tags = {
     Name        = "ansible-demo"

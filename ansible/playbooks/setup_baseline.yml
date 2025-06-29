@@ -1,0 +1,5 @@
+- name: Baseline configuration for all servers
+  hosts: all
+  become: true
+  roles:
+    - baseline
