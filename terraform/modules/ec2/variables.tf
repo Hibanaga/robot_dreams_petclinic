@@ -2,7 +2,11 @@ variable "aws_ec2_ami" {
   type = string
 }
 
-variable "aws_ec2_instance_type" {
+variable "aws_ec2_monitoring_instance_type" {
+  type = string
+}
+
+variable "aws_ec2_web_instance_type" {
   type = string
 }
 

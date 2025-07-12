@@ -1,6 +1,6 @@
 resource "aws_instance" "ec2_monitoring" {
   ami = var.aws_ec2_ami
-  instance_type = var.aws_ec2_instance_type
+  instance_type = var.aws_ec2_monitoring_instance_type
 
   subnet_id = var.aws_subnet_id
 
@@ -18,7 +18,7 @@ resource "aws_instance" "ec2_monitoring" {
 
 resource "aws_instance" "ec2_web" {
   ami = var.aws_ec2_ami
-  instance_type = var.aws_ec2_instance_type
+  instance_type = var.aws_ec2_web_instance_type
 
   subnet_id = var.aws_subnet_id
 
