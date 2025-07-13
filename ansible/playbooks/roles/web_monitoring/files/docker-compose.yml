@@ -13,7 +13,6 @@ services:
     volumes:
       - ./configs/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
       - /var/log/nginx:/var/log/nginx:ro
-      - /var/log/mysql:/var/log/mysql:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
     command: -config.file=/etc/promtail/promtail-config.yml

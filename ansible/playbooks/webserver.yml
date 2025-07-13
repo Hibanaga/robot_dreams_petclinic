@@ -4,6 +4,5 @@
 
   roles:
     - nginx
-    - mysql
     - node_exporter
     - web_monitoring
