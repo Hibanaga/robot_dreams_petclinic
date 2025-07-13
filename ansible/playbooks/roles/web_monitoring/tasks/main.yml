@@ -1,0 +1,32 @@
+- name: Ensure /opt/monitoring and subdirectories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - /opt/monitoring
+    - /opt/monitoring/configs
+
+- name: Copy docker-compose.yml
+  copy:
+    src: files/docker-compose.yml
+    dest: /opt/monitoring/docker-compose.yml
+    mode: '0644'
+
+- name: Ensure promtail-config.yml is not a directory
+  file:
+    path: /opt/monitoring/configs/promtail-config.yml
+    state: absent
+
+- name: Copy promtail config
+  copy:
+    src: files/promtail-config.yml
+    dest: /opt/monitoring/configs/promtail-config.yml
+    mode: '0644'
+
+- name: Start monitoring services via docker-compose
+  command: docker compose up -d
+  args:
+    chdir: /opt/monitoring

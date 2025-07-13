@@ -1,0 +1,7 @@
+- name: Setup monitoring server (Prometheus, Grafana, Loki)
+  hosts: monitoring
+  become: yes
+
+  roles:
+    - docker
+    - prometheus_stack

@@ -1,0 +1,24 @@
+- name: Copy Docker Compose stack
+  copy:
+    src: monitoring/docker-compose.yml
+    dest: /opt/monitoring/docker-compose.yml
+
+- name: Copy Prometheus config
+  copy:
+    src: monitoring/configs/prometheus.yml
+    dest: /opt/monitoring/prometheus/prometheus.yml
+
+- name: Copy Loki config
+  copy:
+    src: monitoring/configs/loki-config.yml
+    dest: /opt/monitoring/loki/loki-config.yml
+
+- name: Copy Promtail config
+  copy:
+    src: monitoring/configs/promtail-config.yml
+    dest: /opt/monitoring/promtail/promtail-config.yml
+
+- name: Start monitoring stack
+  shell: docker-compose up -d
+  args:
+    chdir: /opt/monitoring

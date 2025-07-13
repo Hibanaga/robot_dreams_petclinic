@@ -7,7 +7,7 @@ resource "aws_db_instance" "this" {
   allocated_storage       = 20
   storage_type            = "gp2"
   username                = "admin"
-  password                = "admin"
+  password                = "securePass1"
   db_name                 = "monitoring"
   port                    = 3306
   publicly_accessible     = false

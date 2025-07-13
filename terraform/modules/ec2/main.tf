@@ -25,7 +25,11 @@ resource "aws_instance" "ec2_web" {
   vpc_security_group_ids = [
     var.web_security_group_id
   ]
+
   associate_public_ip_address = true
+
+  key_name = "rsa-keygen-north"
+
 
   tags = {
     Name = "web-server"
