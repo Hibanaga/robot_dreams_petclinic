@@ -1,9 +1,9 @@
 # HM-35 -> Monitoring
 
 
+### Run Monitoring Playbook
 ```textmate
 hibana@mac robot_dreams_petclinic % ansible-playbook -i ansible/inventory.ini ansible/playbooks/monitoring.yml --private-key rsa-keygen-north.pem
-
 
 PLAY [Setup monitoring server (Prometheus, Grafana, Loki)] *********************************************************************************************************************
 
@@ -12,21 +12,29 @@ TASK [Gathering Facts] *********************************************************
 could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.18/reference_appendices/interpreter_discovery.html for more information.
 ok: [monitoring-server]
 
-TASK [docker : Install Docker packages] ****************************************************************************************************************************************
+TASK [docker : Ensure monitoring and config directories exist] *****************************************************************************************************************
+ok: [monitoring-server] => (item=/opt/monitoring)
+ok: [monitoring-server] => (item=/opt/monitoring/configs)
+
+TASK [docker : Upload docker-compose.yml] **************************************************************************************************************************************
+ok: [monitoring-server]
+
+TASK [docker : Upload Prometheus config] ***************************************************************************************************************************************
 changed: [monitoring-server]
 
-TASK [docker : Enable and start Docker] ****************************************************************************************************************************************
+TASK [docker : Upload Loki config] *********************************************************************************************************************************************
 changed: [monitoring-server]
 
-TASK [docker : Add user to docker group] ***************************************************************************************************************************************
+TASK [docker : Upload Promtail config] *****************************************************************************************************************************************
+changed: [monitoring-server]
+
+TASK [docker : Start monitoring stack with Docker Compose] *********************************************************************************************************************
 changed: [monitoring-server]
 
 PLAY RECAP *********************************************************************************************************************************************************************
-monitoring-server          : ok=4    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-```
+monitoring-server          : ok=7    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 
-```textmate
-hibana@mac robot_dreams_petclinic % ssh -i rsa-keygen-north.pem ec2-user@51.20.190.183
+hibana@mac robot_dreams_petclinic % ssh -i rsa-keygen-north.pem ec2-user@16.16.58.120                                                            
    ,     #_
    ~\_  ####_        Amazon Linux 2023
   ~~  \_#####\
@@ -37,108 +45,17 @@ hibana@mac robot_dreams_petclinic % ssh -i rsa-keygen-north.pem ec2-user@51.20.1
       ~~._.   _/
          _/ _/
        _/m/'
-Last login: Sat Jul 12 10:19:00 2025 from 83.31.118.116
-[ec2-user@ip-10-0-1-98 ~]$ docker ps
-CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
-[ec2-user@ip-10-0-1-98 ~]$ sudo systemctl status docker
-● docker.service - Docker Application Container Engine
-     Loaded: loaded (/usr/lib/systemd/system/docker.service; enabled; preset: disabled)
-     Active: active (running) since Sat 2025-07-12 10:18:59 UTC; 1min 4s ago
-TriggeredBy: ● docker.socket
-       Docs: https://docs.docker.com
-    Process: 30130 ExecStartPre=/bin/mkdir -p /run/docker (code=exited, status=0/SUCCESS)
-    Process: 30131 ExecStartPre=/usr/libexec/docker/docker-setup-runtimes.sh (code=exited, status=0/SUCCESS)
-   Main PID: 30132 (dockerd)
-      Tasks: 8
-     Memory: 30.3M
-        CPU: 348ms
-     CGroup: /system.slice/docker.service
-             └─30132 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock --default-ulimit nofile=32768:65536
-
-Jul 12 10:18:58 ip-10-0-1-98.eu-north-1.compute.internal systemd[1]: Starting docker.service - Docker Application Container Engine...
-Jul 12 10:18:58 ip-10-0-1-98.eu-north-1.compute.internal dockerd[30132]: time="2025-07-12T10:18:58.922963413Z" level=info msg="Starting up"
-Jul 12 10:18:58 ip-10-0-1-98.eu-north-1.compute.internal dockerd[30132]: time="2025-07-12T10:18:58.974441273Z" level=info msg="Loading containers: start."
-Jul 12 10:18:59 ip-10-0-1-98.eu-north-1.compute.internal dockerd[30132]: time="2025-07-12T10:18:59.455793995Z" level=info msg="Loading containers: done."
-Jul 12 10:18:59 ip-10-0-1-98.eu-north-1.compute.internal dockerd[30132]: time="2025-07-12T10:18:59.478934838Z" level=info msg="Docker daemon" commit=71907ca containerd-snapsho>
-Jul 12 10:18:59 ip-10-0-1-98.eu-north-1.compute.internal dockerd[30132]: time="2025-07-12T10:18:59.479195569Z" level=info msg="Daemon has completed initialization"
-Jul 12 10:18:59 ip-10-0-1-98.eu-north-1.compute.internal dockerd[30132]: time="2025-07-12T10:18:59.527974552Z" level=info msg="API listen on /run/docker.sock"
-Jul 12 10:18:59 ip-10-0-1-98.eu-north-1.compute.internal systemd[1]: Started docker.service - Docker Application Container Engine.
-
-
-hibana@mac robot_dreams_petclinic % ansible-playbook -i ansible/inventory.ini ansible/playbooks/monitoring.yml --private-key rsa-keygen-north.pem
-
-PLAY [Setup monitoring server (Prometheus, Grafana, Loki)] *********************************************************************************************************************
-
-TASK [Gathering Facts] *********************************************************************************************************************************************************
-[WARNING]: Platform linux on host monitoring-server is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
-could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.18/reference_appendices/interpreter_discovery.html for more information.
-ok: [monitoring-server]
-
-TASK [docker : Install Docker packages] ****************************************************************************************************************************************
-ok: [monitoring-server]
-
-TASK [docker : Enable and start Docker] ****************************************************************************************************************************************
-ok: [monitoring-server]
-
-TASK [docker : Add user to docker group] ***************************************************************************************************************************************
-ok: [monitoring-server]
-
-PLAY RECAP *********************************************************************************************************************************************************************
-monitoring-server          : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+Last login: Sun Jul 13 06:15:01 2025 from 83.31.118.116
+[ec2-user@ip-10-0-1-252 ~]$ docker ps
+CONTAINER ID   IMAGE                     COMMAND                  CREATED          STATUS          PORTS                                       NAMES
+816c70958577   grafana/promtail:latest   "/usr/bin/promtail -…"   10 seconds ago   Up 8 seconds                                                promtail
+987b7422f405   grafana/loki:latest       "/usr/bin/loki -conf…"   10 seconds ago   Up 8 seconds    0.0.0.0:3100->3100/tcp, :::3100->3100/tcp   loki
+e617fc21c5bb   prom/prometheus           "/bin/prometheus --c…"   10 seconds ago   Up 8 seconds    0.0.0.0:9090->9090/tcp, :::9090->9090/tcp   prometheus
+b03e1284c730   grafana/grafana           "/run.sh"                16 minutes ago   Up 16 minutes   0.0.0.0:3000->3000/tcp, :::3000->3000/tcp   grafana
 ```
 
-## After additionals compose installation:
+## Run WebServer Playbook
 ```textmate
-hibana@mac robot_dreams_petclinic % ansible-playbook -i ansible/inventory.ini ansible/playbooks/monitoring.yml --private-key rsa-keygen-north.pem
-
-PLAY [Setup monitoring server (Prometheus, Grafana, Loki)] *********************************************************************************************************************
-
-TASK [Gathering Facts] *********************************************************************************************************************************************************
-[WARNING]: Platform linux on host monitoring-server is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter
-could change the meaning of that path. See https://docs.ansible.com/ansible-core/2.18/reference_appendices/interpreter_discovery.html for more information.
-ok: [monitoring-server]
-
-TASK [docker : Install Docker packages] ****************************************************************************************************************************************
-ok: [monitoring-server]
-
-TASK [docker : Ensure Docker CLI plugin directory exists] **********************************************************************************************************************
-changed: [monitoring-server]
-
-TASK [docker : Download Docker Compose v2 binary] ******************************************************************************************************************************
-changed: [monitoring-server]
-
-TASK [docker : Enable and start Docker] ****************************************************************************************************************************************
-ok: [monitoring-server]
-
-TASK [docker : Add user to docker group] ***************************************************************************************************************************************
-ok: [monitoring-server]
-
-PLAY RECAP *********************************************************************************************************************************************************************
-monitoring-server          : ok=6    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
-
-
-hibana@mac robot_dreams_petclinic % scp -i rsa-keygen-north.pem -r monitoring/ ec2-user@51.20.190.183:/home/ec2-user/
-loki-config.yml                                                                                                                               100%  649    22.6KB/s   00:00    
-promtail-config.yml                                                                                                                           100%  825    26.9KB/s   00:00    
-prometheus.yml                                                                                                                                100%  221     7.7KB/s   00:00    
-docker-compose.yml                                                                                                                            100%  925    31.5KB/s   00:00    
-
-[ec2-user@ip-10-0-1-98 monitoring]$ sudo docker compose up -d
-[+] Running 46/4
- ✔ grafana Pulled                                                                                                                                                         18.2s 
- ✔ loki Pulled                                                                                                                                                            10.4s 
- ✔ promtail Pulled                                                                                                                                                        16.0s 
- ✔ prometheus Pulled                                                                                                                                                      15.9s 
-[+] Running 5/5
- ✔ Network monitoring_default  Created                                                                                                                                     0.2s 
- ✔ Container promtail          Started                                                                                                                                     0.9s 
- ✔ Container grafana           Started                                                                                                                                     1.2s 
- ✔ Container prometheus        Started                                                                                                                                     1.1s 
- ✔ Container loki              Started                                                                                                                                     1.2s 
-```
-
-
-```
 hibana@mac robot_dreams_petclinic % ansible-playbook -i ansible/inventory.ini ansible/playbooks/webserver.yml --private-key rsa-keygen-north.pem
 
 PLAY [Deploy Promtail and Node Exporter on web server] *************************************************************************************************************************
@@ -169,29 +86,153 @@ TASK [node_exporter : Install dependencies] ************************************
 ok: [web-server]
 
 TASK [node_exporter : Download Node Exporter] **********************************************************************************************************************************
-changed: [web-server]
+ok: [web-server]
 
 TASK [node_exporter : Extract Node Exporter] ***********************************************************************************************************************************
-changed: [web-server]
+ok: [web-server]
 
 TASK [node_exporter : Create Node Exporter service] ****************************************************************************************************************************
+ok: [web-server]
+
+TASK [node_exporter : Enable and start Node Exporter] **************************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Install Docker] *****************************************************************************************************************************************
 changed: [web-server]
+
+TASK [web_monitoring : Enable and start Docker] ********************************************************************************************************************************
+changed: [web-server]
+
+TASK [web_monitoring : Add ec2-user to docker group] ***************************************************************************************************************************
+changed: [web-server]
+
+TASK [web_monitoring : Create Docker CLI plugins directory] ********************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Download docker-compose V2 binary] **********************************************************************************************************************
+changed: [web-server]
+
+TASK [web_monitoring : Enable and start Docker service] ************************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Add ec2-user to docker group] ***************************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Ensure /opt/monitoring and subdirectories exist] ********************************************************************************************************
+ok: [web-server] => (item=/opt/monitoring)
+ok: [web-server] => (item=/opt/monitoring/configs)
+
+TASK [web_monitoring : Copy docker-compose.yml] ********************************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Ensure promtail-config.yml is not a directory] **********************************************************************************************************
+changed: [web-server]
+
+TASK [web_monitoring : Copy promtail config] ***********************************************************************************************************************************
+changed: [web-server]
+
+TASK [web_monitoring : Start monitoring services via docker-compose] ***********************************************************************************************************
+changed: [web-server]
+
+PLAY RECAP *********************************************************************************************************************************************************************
+web-server                 : ok=23   changed=7    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+[ec2-user@ip-10-0-1-140 ~]$ docker ps
+CONTAINER ID   IMAGE                       COMMAND                  CREATED         STATUS              PORTS     NAMES
+c9f5eada2b83   prom/node-exporter:latest   "/bin/node_exporter"     5 minutes ago   Up About a minute             node-exporter
+66813e942ade   grafana/promtail:latest     "/usr/bin/promtail -…"   5 minutes ago   Up 5 minutes                  promtail
+```
+
+
+```textmate
+hibana@mac robot_dreams_petclinic % ansible-playbook -i ansible/inventory.ini ansible/playbooks/webserver.yml --private-key rsa-keygen-north.pem
+
+PLAY [Deploy Promtail and Node Exporter on web server] *************************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************************************************
+[WARNING]: Platform linux on host web-server is using the discovered Python interpreter at /usr/bin/python3.9, but future installation of another Python interpreter could
+change the meaning of that path. See https://docs.ansible.com/ansible-core/2.18/reference_appendices/interpreter_discovery.html for more information.
+ok: [web-server]
+
+TASK [nginx : Install Nginx] ***************************************************************************************************************************************************
+ok: [web-server]
+
+TASK [nginx : Enable and start Nginx] ******************************************************************************************************************************************
+ok: [web-server]
+
+TASK [mysql : Ensure pip3 is installed] ****************************************************************************************************************************************
+ok: [web-server]
+
+TASK [mysql : Install PyMySQL for Ansible MySQL modules] ***********************************************************************************************************************
+ok: [web-server]
+
+TASK [mysql : Create database user] ********************************************************************************************************************************************
+[WARNING]: Option column_case_sensitive is not provided. The default is now false, so the column's name will be uppercased. The default will be changed to true in
+community.mysql 4.0.0.
+ok: [web-server]
+
+TASK [node_exporter : Install dependencies] ************************************************************************************************************************************
+ok: [web-server]
+
+TASK [node_exporter : Download Node Exporter] **********************************************************************************************************************************
+ok: [web-server]
+
+TASK [node_exporter : Extract Node Exporter] ***********************************************************************************************************************************
+ok: [web-server]
+
+TASK [node_exporter : Create Node Exporter service] ****************************************************************************************************************************
+ok: [web-server]
 
 TASK [node_exporter : Enable and start Node Exporter] **************************************************************************************************************************
 changed: [web-server]
 
-TASK [web_monitoring : Ensure monitoring directory exists] *********************************************************************************************************************
+TASK [web_monitoring : Install Docker] *****************************************************************************************************************************************
 ok: [web-server]
 
-TASK [web_monitoring : Copy Docker Compose file] *******************************************************************************************************************************
+TASK [web_monitoring : Enable and start Docker] ********************************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Add ec2-user to docker group] ***************************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Ensure MySQL log directory exists] **********************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Ensure MySQL log files exist] ***************************************************************************************************************************
+changed: [web-server] => (item=/var/log/mysql/error.log)
+changed: [web-server] => (item=/var/log/mysql/slow.log)
+
+TASK [web_monitoring : Create Docker CLI plugins directory] ********************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Download docker-compose V2 binary] **********************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Enable and start Docker service] ************************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Add ec2-user to docker group] ***************************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Ensure /opt/monitoring and subdirectories exist] ********************************************************************************************************
+ok: [web-server] => (item=/opt/monitoring)
+ok: [web-server] => (item=/opt/monitoring/configs)
+
+TASK [web_monitoring : Copy docker-compose.yml] ********************************************************************************************************************************
+ok: [web-server]
+
+TASK [web_monitoring : Ensure promtail-config.yml is not a directory] **********************************************************************************************************
 changed: [web-server]
 
-TASK [web_monitoring : Ensure config directory exists] *************************************************************************************************************************
-ok: [web-server]
+TASK [web_monitoring : Copy promtail config] ***********************************************************************************************************************************
+changed: [web-server]
 
-TASK [web_monitoring : Copy Promtail config] ***********************************************************************************************************************************
+TASK [web_monitoring : Remove existing promtail container if present] **********************************************************************************************************
+changed: [web-server]
+
+TASK [web_monitoring : Start monitoring services via docker-compose] ***********************************************************************************************************
 changed: [web-server]
 
 PLAY RECAP *********************************************************************************************************************************************************************
-web-server                 : ok=15   changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+web-server                 : ok=26   changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 ```

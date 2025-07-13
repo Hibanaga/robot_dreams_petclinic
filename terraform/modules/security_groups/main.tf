@@ -31,7 +31,9 @@ resource "aws_security_group" "web_security_group" {
       from_port   = ingress.value.from
       to_port     = ingress.value.to
       protocol    = ingress.value.protocol
-      cidr_blocks = ingress.value.cidrs
+
+      cidr_blocks = ingress.value.sg_source ? [] : ingress.value.cidrs
+      security_groups = ingress.value.sg_source ? [aws_security_group.monitoring_security_group.id] : null
     }
   }
 

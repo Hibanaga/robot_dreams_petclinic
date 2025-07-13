@@ -11,9 +11,9 @@ locals {
   ]
 
   web_ingress_rules = [
-    { from = 22,   to = 22,   protocol = "tcp", cidrs = local.all_ips }, // SSH
-    { from = 80,   to = 80,   protocol = "tcp", cidrs = local.all_ips }, // HTTP
-    { from = 9100, to = 9100, protocol = "tcp", cidrs = local.internal_ips }, // Node Exporter
+    { from = 22,   to = 22,   protocol = "tcp", cidrs = local.all_ips, sg_source = false }, // SSH
+    { from = 80,   to = 80,   protocol = "tcp", cidrs = local.all_ips, sg_source = false }, // HTTP
+    { from = 9100, to = 9100, protocol = "tcp", cidrs = [], sg_source = true }, // Node Exporter
   ]
 
   rds_ingress_rules = [
