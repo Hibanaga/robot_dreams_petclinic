@@ -1,0 +1,8 @@
+- name: Deploy Promtail and Node Exporter on web server
+  hosts: web-server
+  become: true
+
+  roles:
+    - nginx
+    - node_exporter
+    - web_monitoring

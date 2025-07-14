@@ -1,0 +1,37 @@
+- name: Ensure monitoring and config directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /opt/monitoring
+    - /opt/monitoring/configs
+
+- name: Upload docker-compose.yml
+  copy:
+    src: files/monitoring/docker-compose.yml
+    dest: /opt/monitoring/docker-compose.yml
+    mode: '0644'
+
+- name: Upload Prometheus config
+  copy:
+    src: files/monitoring/prometheus.yml
+    dest: /opt/monitoring/configs/prometheus.yml
+    mode: '0644'
+
+- name: Upload Loki config
+  copy:
+    src: files/monitoring/loki-config.yml
+    dest: /opt/monitoring/configs/loki-config.yml
+    mode: '0644'
+
+- name: Upload Promtail config
+  copy:
+    src: files/monitoring/promtail-config.yml
+    dest: /opt/monitoring/configs/promtail-config.yml
+    mode: '0644'
+
+- name: Start monitoring stack with Docker Compose
+  shell: docker compose -f /opt/monitoring/docker-compose.yml up -d
+  args:
+    chdir: /opt/monitoring
